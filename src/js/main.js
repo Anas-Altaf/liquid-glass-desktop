@@ -8,6 +8,7 @@ import { Wallpaper } from "./wallpaper/wallpaper.js";
 import { THEMES } from "./wallpaper/themes.js";
 import { loadWallpaperMedia, wpMedia, mediaItems, findMedia, addMedia, setWEFolder as setWEMediaFolder } from "./wallpaper/media.js";
 import { initKeyboard } from "./components/keyboard.js";
+import { initDragScroll } from "./components/drag-scroll.js";
 import { showMenu, closeMenus } from "./components/menu.js";
 import { mountClock, clockFace, heroClockOpts } from "./widgets/clock.js";
 import { mountWeather } from "./widgets/weather.js";
@@ -79,6 +80,7 @@ const island = initIsland({ openMenu: mainMenu, openSettings, toggleCC: from => 
 initDock(actions);
 enableDragging();
 initKeyboard();
+initDragScroll();
 
 addEventListener("contextmenu", e => {
   if (e.target.closest("input, textarea, .menu, #settings, #cc")) return;

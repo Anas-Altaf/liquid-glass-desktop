@@ -1938,6 +1938,61 @@
     return { hide };
   }
 
+  // src/js/components/drag-scroll.js
+  var SCROLLERS = "#setMain, .set-side, .mu-list, .rm-list";
+  var SKIP = ".slider, input, textarea, select, .seg, .switch, .kb";
+  function initDragScroll() {
+    let d = null, raf2 = 0;
+    addEventListener("pointerdown", (e) => {
+      if (e.button !== 0) return;
+      const sc = e.target.closest(SCROLLERS);
+      if (!sc || e.target.closest(SKIP)) return;
+      const canY = sc.scrollHeight > sc.clientHeight + 1, canX = sc.scrollWidth > sc.clientWidth + 1;
+      if (!canY && !canX) return;
+      cancelAnimationFrame(raf2);
+      d = { sc, x: e.clientX, y: e.clientY, top: sc.scrollTop, left: sc.scrollLeft, canX, canY, on: false, v: 0, lt: performance.now(), lp: canY ? e.clientY : e.clientX };
+    }, true);
+    addEventListener("pointermove", (e) => {
+      if (!d) return;
+      const dx = e.clientX - d.x, dy = e.clientY - d.y;
+      if (!d.on) {
+        if (Math.hypot(dx, dy) < 6) return;
+        d.on = true;
+        d.sc.classList.add("drag-scrolling");
+      }
+      if (d.canY) d.sc.scrollTop = d.top - dy;
+      else d.sc.scrollLeft = d.left - dx;
+      const now = performance.now(), p = d.canY ? e.clientY : e.clientX, dt = Math.max(1, now - d.lt);
+      d.v = 0.8 * ((d.lp - p) / dt) + 0.2 * d.v;
+      d.lp = p;
+      d.lt = now;
+    }, true);
+    const end = () => {
+      if (!d) return;
+      const { sc, on, canY } = d;
+      let v = d.v * 16;
+      d = null;
+      if (!on) return;
+      sc.classList.remove("drag-scrolling");
+      const swallow = (ev) => {
+        ev.stopPropagation();
+        ev.preventDefault();
+      };
+      addEventListener("click", swallow, true);
+      setTimeout(() => removeEventListener("click", swallow, true), 0);
+      const glide = () => {
+        if (Math.abs(v) < 0.4) return;
+        if (canY) sc.scrollTop += v;
+        else sc.scrollLeft += v;
+        v *= 0.94;
+        raf2 = requestAnimationFrame(glide);
+      };
+      raf2 = requestAnimationFrame(glide);
+    };
+    addEventListener("pointerup", end, true);
+    addEventListener("pointercancel", end, true);
+  }
+
   // src/js/components/menu.js
   init_util();
   var open = null;
@@ -2575,7 +2630,7 @@
   init_visualizer();
   var PLAY = "M7 4.6v14.8a1 1 0 0 0 1.5.86l12.3-7.4a1 1 0 0 0 0-1.72L8.5 3.74A1 1 0 0 0 7 4.6Z";
   var PAUSE = "M6 4.5a1 1 0 0 1 1-1h2.6a1 1 0 0 1 1 1v15a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1zM13.4 4.5a1 1 0 0 1 1-1H17a1 1 0 0 1 1 1v15a1 1 0 0 1-1 1h-2.6a1 1 0 0 1-1-1z";
-  var SKIP = `<svg width="26" height="26" viewBox="0 0 32 32" fill="currentColor"><path d="M4 9.2v13.6a1 1 0 0 0 1.55.83l9.55-6.6a1.2 1.2 0 0 0 0-2.06L5.55 8.37A1 1 0 0 0 4 9.2Z"/><path d="M17 9.2v13.6a1 1 0 0 0 1.55.83l9.55-6.6a1.2 1.2 0 0 0 0-2.06l-9.55-6.6A1 1 0 0 0 17 9.2Z"/></svg>`;
+  var SKIP2 = `<svg width="26" height="26" viewBox="0 0 32 32" fill="currentColor"><path d="M4 9.2v13.6a1 1 0 0 0 1.55.83l9.55-6.6a1.2 1.2 0 0 0 0-2.06L5.55 8.37A1 1 0 0 0 4 9.2Z"/><path d="M17 9.2v13.6a1 1 0 0 0 1.55.83l9.55-6.6a1.2 1.2 0 0 0 0-2.06l-9.55-6.6A1 1 0 0 0 17 9.2Z"/></svg>`;
   var ICON = {
     shuffle: '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h4v4M4 20 20 4M20 16v4h-4M15 15l5 5M4 4l5 5"/></svg>',
     repeat: '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l3 3-3 3"/><path d="M4 11V9a4 4 0 0 1 4-4h12M7 22l-3-3 3-3"/><path d="M20 13v2a4 4 0 0 1-4 4H4"/></svg>',
@@ -2609,9 +2664,9 @@
     <div class="mu-scrub"><div class="mu-seek"></div><div class="mu-times num"><span class="mu-el">0:00</span><span class="mu-rem"></span></div></div>
     <div class="mu-ctrl">
       <button class="icon-btn mu-mode mu-shuffle" aria-label="Shuffle" aria-pressed="false">${ICON.shuffle}</button>
-      <button class="icon-btn mu-prev" aria-label="Previous track"><span style="display:inline-flex;transform:scaleX(-1)">${SKIP}</span></button>
+      <button class="icon-btn mu-prev" aria-label="Previous track"><span style="display:inline-flex;transform:scaleX(-1)">${SKIP2}</span></button>
       <button class="icon-btn mu-play" aria-label="Play"><svg width="34" height="34" viewBox="0 0 24 24"><path fill="currentColor" d="${PLAY}"/></svg></button>
-      <button class="icon-btn mu-next" aria-label="Next track">${SKIP}</button>
+      <button class="icon-btn mu-next" aria-label="Next track">${SKIP2}</button>
       <button class="icon-btn mu-mode mu-repeat" aria-label="Repeat">${ICON.repeat}<span class="mu-one" hidden>1</span></button>
     </div>
     <div class="mu-src faint" hidden>Playing on your PC</div>
@@ -3972,19 +4027,19 @@
   init_player();
   init_store();
   var SECTIONS = [
-    ["themes", "Themes", "#ff2d55"],
-    ["widgets", "Widgets", "#0a84ff"],
-    ["glass", "Glass", "#5e5ce6"],
-    ["cards", "Cards", "#bf5af2"],
-    ["wallpaper", "Wallpaper", "#ff9f0a"],
-    ["island", "Top Bar", "#30b0c7"],
-    ["dock", "Shortcuts", "#34c759"],
-    ["clock", "Clock", "#636366"],
-    ["music", "Music", "#fa233b"],
-    ["viz", "Visualizer", "#ff375f"],
-    ["weather", "Weather", "#32ade6"],
-    ["data", "Data & Backup", "#8e8e93"],
-    ["access", "Accessibility", "#0a84ff"]
+    ["themes", "Themes", '<path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.6-.8 1.6-1.6 0-.9-.6-1.3-.6-2.1 0-.9.7-1.6 1.6-1.6H17a4 4 0 0 0 4-4C21 6.9 17 3 12 3Z"/><circle cx="7.5" cy="11" r="1.2"/><circle cx="10.5" cy="7" r="1.2"/><circle cx="15.5" cy="7.5" r="1.2"/>'],
+    ["widgets", "Widgets", '<rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2"/>'],
+    ["glass", "Glass", '<path d="M12 3s6 6.4 6 11a6 6 0 0 1-12 0c0-4.6 6-11 6-11Z"/><path d="M9.5 15a2.6 2.6 0 0 0 2.5 2.5"/>'],
+    ["cards", "Cards", '<rect x="3" y="7" width="14" height="13" rx="2.5"/><path d="M7 4h11.5A2.5 2.5 0 0 1 21 6.5V16"/>'],
+    ["wallpaper", "Wallpaper", '<rect x="3" y="4.5" width="18" height="15" rx="2.5"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="m21 15.5-5-5-9 9"/>'],
+    ["island", "Top Bar", '<rect x="5" y="4" width="14" height="5" rx="2.5"/><path d="M4 20h16M4 15h16" opacity=".5"/>'],
+    ["dock", "Shortcuts", '<rect x="3" y="14" width="18" height="6.5" rx="2.5"/><path d="M8 17.3h.01M12 17.3h.01M16 17.3h.01"/><path d="M12 4v6m-3-3 3 3 3-3"/>'],
+    ["clock", "Clock", '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>'],
+    ["music", "Music", '<path d="M9 17.5V6l10-2v11.5"/><circle cx="6.5" cy="17.5" r="2.5"/><circle cx="16.5" cy="15.5" r="2.5"/>'],
+    ["viz", "Visualizer", '<path d="M4 14v4M8 9v9M12 5v13M16 10v8M20 13v5"/>'],
+    ["weather", "Weather", '<path d="M7 18h10a3.5 3.5 0 0 0 0-7 5 5 0 0 0-9.6 1.4A2.8 2.8 0 0 0 7 18Z"/><path d="M8.5 6.5 7.6 5.6M13 4.5V3.3M4 10.5H2.8"/>'],
+    ["data", "Data & Backup", '<ellipse cx="12" cy="6" rx="7.5" ry="2.8"/><path d="M4.5 6v12c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8V6M4.5 12c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8"/>'],
+    ["access", "Accessibility", '<circle cx="12" cy="4.8" r="1.8"/><path d="M5 8.5c2.4.8 4.7 1.2 7 1.2s4.6-.4 7-1.2M12 9.7v4.6m0 0-3 6.2m3-6.2 3 6.2"/>']
   ];
   var SRC = { source: "settings" };
   var S = (path, v) => set(path, v, SRC);
@@ -4030,11 +4085,13 @@
   function initSettings({ resetLayout: resetLayout2 }) {
     const win = $("#settings"), side = $("#setSide"), main = $("#setMain");
     let current_ = "themes", trigger = null, cardSel = "music", clockTarget = "hero", cleanup = [], cityResults = null, cityStatus = "";
-    SECTIONS.forEach(([id, name, color]) => {
+    SECTIONS.forEach(([id, name, icon2]) => {
       const b = el("button", "set-nav");
       b.setAttribute("role", "tab");
       b.dataset.sec = id;
-      b.append(Object.assign(el("span", "dot"), { style: `background:${color}` }), name);
+      const ic = el("span", "nav-ic");
+      ic.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${icon2}</svg>`;
+      b.append(ic, name);
       b.onclick = () => render(id);
       side.append(b);
     });
@@ -4857,6 +4914,7 @@
   initDock(actions);
   enableDragging();
   initKeyboard();
+  initDragScroll();
   addEventListener("contextmenu", (e) => {
     if (e.target.closest("input, textarea, .menu, #settings, #cc")) return;
     e.preventDefault();

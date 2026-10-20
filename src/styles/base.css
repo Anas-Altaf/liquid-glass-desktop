@@ -23,7 +23,9 @@ button { cursor: pointer; }
 ::-webkit-scrollbar-thumb { border: 3.5px solid transparent; border-radius: 8px; background-clip: padding-box; background-color: color-mix(in srgb, var(--ink) 28%, transparent); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .18); transition: background-color .2s; }
 ::-webkit-scrollbar-thumb:hover { background-color: color-mix(in srgb, var(--ink) 48%, transparent); border-width: 2.5px; }
 ::-webkit-scrollbar-thumb:active { background-color: color-mix(in srgb, var(--accent, var(--ink)) 65%, transparent); }
-:not(:hover)::-webkit-scrollbar-thumb { background-color: transparent; box-shadow: none; }
+:not(:hover)::-webkit-scrollbar-thumb { background-color: color-mix(in srgb, var(--ink) 14%, transparent); box-shadow: none; }
+.drag-scrolling { cursor: grabbing !important; user-select: none; }
+.drag-scrolling * { pointer-events: none; }
 ::-webkit-scrollbar-button { display: none; }
 @supports not selector(::-webkit-scrollbar) { * { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--ink) 30%, transparent) transparent; } }
 .soft { color: var(--ink-soft); } .faint { color: var(--ink-faint); }
