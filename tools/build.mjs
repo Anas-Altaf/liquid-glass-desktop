@@ -4,7 +4,7 @@
 import { build } from "esbuild";
 import { readFileSync, writeFileSync, mkdirSync, copyFileSync, existsSync } from "node:fs";
 
-const CSS = ["tokens", "base", "glass", "components", "shell", "widgets"].map(n => readFileSync(`src/styles/${n}.css`, "utf8")).join("\n");
+const CSS = ["tokens", "base", "glass", "components", "shell", "widgets", "skins"].map(n => readFileSync(`src/styles/${n}.css`, "utf8")).join("\n");
 const res = await build({ entryPoints: ["src/js/main.js"], bundle: true, format: "iife", target: ["chrome100", "safari16", "firefox115"], write: false, legalComments: "inline", charset: "utf8" });
 const JS = res.outputFiles[0].text;
 const html = readFileSync("src/index.html", "utf8");

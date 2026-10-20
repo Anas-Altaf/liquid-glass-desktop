@@ -15,11 +15,25 @@ button { cursor: pointer; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 :focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 .num { font-variant-numeric: tabular-nums; }
+
+/* glass scrollbars: a thin frosted pill that only shows while you're over the list */
+::-webkit-scrollbar { width: 12px; height: 12px; background: transparent; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-corner { background: transparent; }
+::-webkit-scrollbar-thumb { border: 3.5px solid transparent; border-radius: 8px; background-clip: padding-box; background-color: color-mix(in srgb, var(--ink) 28%, transparent); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .18); transition: background-color .2s; }
+::-webkit-scrollbar-thumb:hover { background-color: color-mix(in srgb, var(--ink) 48%, transparent); border-width: 2.5px; }
+::-webkit-scrollbar-thumb:active { background-color: color-mix(in srgb, var(--accent, var(--ink)) 65%, transparent); }
+:not(:hover)::-webkit-scrollbar-thumb { background-color: transparent; box-shadow: none; }
+::-webkit-scrollbar-button { display: none; }
+@supports not selector(::-webkit-scrollbar) { * { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--ink) 30%, transparent) transparent; } }
 .soft { color: var(--ink-soft); } .faint { color: var(--ink-faint); }
 
 #wall { position: relative; width: 100%; height: 100%; overflow: hidden; }
 #wallpaper, #wpImage, #wpImage2, #wpVideo { position: absolute; inset: 0; width: 100%; height: 100%; display: block; object-fit: cover; }
 #wpImage2 { opacity: 0; }
+#wall.flow { background-size: 300% 300% !important; animation: grad-flow 40s ease-in-out infinite alternate; }
+@keyframes grad-flow { from { background-position: 0% 30%; } to { background-position: 100% 70%; } }
+@media (prefers-reduced-motion: reduce) { #wall.flow { animation: none; } }
 #edgeViz { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: 90px; }
 #dim { position: absolute; inset: 0; background: #000; opacity: 0; pointer-events: none; transition: opacity .3s ease; }
 
@@ -62,6 +76,46 @@ button { cursor: pointer; }
 .analog .h-m { stroke-width: calc(3px * var(--cf-wf, 1)); }
 .analog .tk-major { stroke-width: calc(2.2px * var(--cf-wf, 1)); }
 .analog .tk-minor { stroke-width: calc(.9px * var(--cf-wf, 1)); }
+.clockface[data-font="pixel"] { --cf-font: "VT323", "Courier New", monospace; }
+.widget[data-w="clock"] .clockface { text-align: var(--cf-align, left); }
+.widget[data-w="clock"] .cf-analog, .widget[data-w="clock"] .cf-rings, .widget[data-w="clock"] .cf-flip { justify-content: var(--cf-justify, start); }
+
+/* outline: hollow numbers */
+.cf-outline .cf-time { color: transparent; -webkit-text-stroke: calc(2px * var(--cf-scale, 1) * var(--hero-fit, 1)) currentColor; font-weight: var(--cf-weight, 800); }
+.cf-outline .cf-sec, .cf-outline .cf-ap { -webkit-text-stroke: 1.2px currentColor; }
+/* neon: glowing tube letters in the accent colour */
+.cf-neon .cf-time { color: #fff; font-weight: var(--cf-weight, 300); text-shadow: 0 0 6px #fff, 0 0 14px var(--accent, #ff2bd6), 0 0 30px var(--accent, #ff2bd6), 0 0 60px var(--accent, #ff2bd6); }
+.cf-neon .cf-date { color: #fff; text-shadow: 0 0 10px var(--accent, #ff2bd6); }
+/* LCD: dark segments on a lit panel, with the unlit "88:88" ghosted behind */
+.cf-lcd { position: relative; display: inline-block; padding: .18em .35em .1em; border-radius: .18em; background: linear-gradient(180deg, #b7c9a0, #9fb487); color: #1c2a12; box-shadow: inset 0 2px 6px rgba(0, 0, 0, .35); font-size: calc(58px * var(--cf-scale, 1)); }
+#hero .cf-lcd { font-size: calc(clamp(64px, 10vw, 168px) * var(--hero-size) * var(--hero-fit)); }
+.cf-lcd .cf-time { font-family: "VT323", ui-monospace, monospace; font-size: 1em; font-weight: 400; letter-spacing: .02em; text-shadow: none; }
+.cf-lcd .cf-ghost { position: absolute; inset: .18em .35em .1em; opacity: .12; }
+.cf-lcd .cf-sec { opacity: .8; }
+/* flip: split-flap tiles */
+.cf-flip { display: inline-flex; align-items: center; gap: .06em; font-family: var(--cf-font); font-weight: var(--cf-weight, 700); font-size: calc(58px * var(--cf-scale, 1)); line-height: 1; }
+#hero .cf-flip { font-size: calc(clamp(56px, 8vw, 140px) * var(--hero-size) * var(--hero-fit)); }
+.cf-flip .fl { position: relative; display: inline-grid; place-items: center; width: .72em; height: 1.08em; border-radius: .1em; background: linear-gradient(180deg, rgba(30, 30, 36, .92) 50%, rgba(20, 20, 26, .95) 50%); color: #f5f5f7; box-shadow: 0 .05em .14em rgba(0, 0, 0, .35); transform-origin: 50% 50%; text-shadow: none; }
+.cf-flip .fl::after { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: max(1px, .02em); background: rgba(0, 0, 0, .55); }
+.cf-flip .fl-sep { margin: 0 .04em; opacity: .7; }
+.cf-flip .fl-s { display: inline-flex; gap: .04em; margin-left: .12em; font-size: .45em; align-self: flex-end; }
+.cf-flip .cf-ap { font-size: .3em; align-self: flex-end; margin-left: .2em; }
+/* words: the time spelled out */
+.cf-words { font-family: var(--cf-font); line-height: .95; font-size: calc(40px * var(--cf-scale, 1)); letter-spacing: -0.02em; }
+#hero .cf-words { font-size: calc(clamp(44px, 6.5vw, 116px) * var(--hero-size) * var(--hero-fit)); }
+.cf-words span, .cf-words b { display: block; }
+.cf-words .w0 { font-size: .45em; font-weight: 600; opacity: .6; letter-spacing: 0; margin-bottom: .1em; }
+.cf-words .w1 { font-weight: var(--cf-weight, 800); text-transform: capitalize; }
+.cf-words .w2 { font-weight: 300; opacity: .8; }
+/* rings: hours, minutes, seconds as progress rings */
+.cf-rings { position: relative; display: inline-grid; place-items: center; width: calc(150px * var(--cf-scale, 1)); aspect-ratio: 1; }
+#hero .cf-rings { width: calc(250px * var(--hero-size) * var(--hero-fit)); }
+.cf-rings svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.cf-rings .rg-track { stroke: currentColor; stroke-opacity: .14; }
+.cf-rings .rg-h { stroke: var(--accent, #ff375f); } .cf-rings .rg-m { stroke: var(--accent, #30d158); opacity: .8; } .cf-rings .rg-s { stroke: currentColor; opacity: .7; }
+.cf-rings .rg { transition: stroke-dashoffset .6s var(--ease); }
+.cf-rings .cf-time { position: relative; font-size: calc(26px * var(--cf-scale, 1)); }
+#hero .cf-rings .cf-time { font-size: calc(46px * var(--hero-size) * var(--hero-fit)); }
 .snap-guide { position: fixed; z-index: 70; display: none; pointer-events: none; background: rgba(10, 132, 255, .8); box-shadow: 0 0 6px rgba(10, 132, 255, .6); }
 .snap-guide.gx { top: 0; bottom: 0; width: 1px; }
 .snap-guide.gy { left: 0; right: 0; height: 1px; }

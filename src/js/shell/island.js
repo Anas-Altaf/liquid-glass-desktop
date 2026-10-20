@@ -15,7 +15,7 @@ export function initIsland({ openMenu, openSettings, toggleCC }) {
   const q = s => isl.querySelector(s);
   attach($("#ivL"), { align: "center", reverse: true, bars: 18 });
   attach($("#ivR"), { align: "center", bars: 18 });
-  let pinned = false, hover = false, music = { playing: false }, wx = null;
+  let pinned = false, hover = false, music = { playing: false }, wx = null, battery = null;
 
   function mode() {
     const m = cfg.island.mode;
@@ -34,16 +34,31 @@ export function initIsland({ openMenu, openSettings, toggleCC }) {
       }
     }
     isl.classList.toggle("playing", !!music.playing);
-    q(".isl-time").hidden = !cfg.island.showTime;
-    q(".isl-wx").hidden = !cfg.island.showWeather || !wx;
+    const I = cfg.island;
+    q(".isl-time").hidden = !I.showTime;
+    q(".isl-wx").hidden = !I.showWeather || !wx;
+    q(".isl-net").style.display = I.showNetwork ? "" : "none";
+    q(".isl-np-wrap").hidden = !I.showNowPlaying;
+    q(".isl-cc").hidden = !I.showCC; q(".isl-menu").hidden = !I.showMenu;
+    drawBattery();
     wrap.classList.toggle("viz-on", cfg.viz.island && !!music.playing && cfg.island.mode !== "bar");
   }
-  isl.addEventListener("pointerenter", () => { hover = true; sync(); });
-  wrap.addEventListener("pointerleave", () => { hover = false; sync(); });
+  /* hover with a short delay both ways: the expand/collapse animation changes the
+   * island's size under the pointer, which used to start an enter/leave loop */
+  let hoverT = 0;
+  isl.addEventListener("pointerenter", () => { clearTimeout(hoverT); hoverT = setTimeout(() => { hover = true; sync(); }, 120); });
+  wrap.addEventListener("pointerleave", () => { clearTimeout(hoverT); hoverT = setTimeout(() => { if (!wrap.matches(":hover")) { hover = false; sync(); } }, 320); });
   q(".isl-compact").addEventListener("click", e => { if (e.target.closest("button")) return; pinned = !pinned; sync(); });
   addEventListener("pointerdown", e => { if (pinned && !e.target.closest("#islandWrap")) { pinned = false; sync(); } });
-  /* auto mode: reveal when the pointer touches the top edge */
-  addEventListener("pointermove", e => { if (cfg.island.mode === "auto") wrap.classList.toggle("revealed", e.clientY < 10 || wrap.matches(":hover")); }, { passive: true });
+  /* auto mode: reveal when the pointer touches the top edge, and stay until it
+   * has clearly moved away (below the island plus a margin), so it can't flicker */
+  let hideT = 0;
+  addEventListener("pointermove", e => {
+    if (cfg.island.mode !== "auto") return;
+    const shown = wrap.classList.contains("revealed"), reach = 10 + isl.offsetHeight + 40;
+    if (e.clientY < 10 || (shown && (e.clientY < reach || pinned || wrap.matches(":hover, :focus-within")))) { clearTimeout(hideT); hideT = 0; if (!shown) wrap.classList.add("revealed"); }
+    else if (shown && !hideT) hideT = setTimeout(() => { hideT = 0; wrap.classList.remove("revealed"); }, 450);
+  }, { passive: true });
 
   q(".isl-menu").onclick = e => openMenu(e.currentTarget);
   q(".isl-cc").onclick = e => toggleCC(e.currentTarget);
@@ -68,7 +83,20 @@ export function initIsland({ openMenu, openSettings, toggleCC }) {
   });
   bus.on("weather", w => { wx = w; q(".isl-wx").textContent = `${Math.round(w.temp)}°`; sync(); });
   bus.on("net", on => { q(".isl-net").style.opacity = on ? "1" : ".35"; });
-  bus.on("battery", b => { const s = q(".isl-bat"); s.hidden = false; s.textContent = Math.round(b.level * 100) + "%"; });
+  bus.on("battery", b => { battery = b; drawBattery(); });
+  /* battery: off, percent, icon, both, or the percentage inside the icon */
+  function drawBattery() {
+    const s = q(".isl-bat"), m = cfg.island.battery;
+    s.hidden = !battery || m === "off"; if (s.hidden) return;
+    const pctN = Math.round(battery.level * 100), low = battery.level <= 0.2 && !battery.charging;
+    const fill = low ? "#ff453a" : battery.charging ? "#30d158" : "currentColor";
+    const bolt = battery.charging ? '<path d="M13.6 2.2 9.4 7.3h3l-1.2 4.5 4.3-5.4h-3z" fill="#fff" stroke="rgba(0,0,0,.35)" stroke-width=".5"/>' : "";
+    const icon = inside => inside
+      ? `<svg class="bat-ic big" width="34" height="16" viewBox="0 0 34 16" aria-hidden="true"><rect x=".75" y=".75" width="29" height="14.5" rx="4.2" fill="none" stroke="currentColor" stroke-opacity=".5" stroke-width="1.5"/><rect x="31" y="5.2" width="2.2" height="5.6" rx="1.1" fill="currentColor" fill-opacity=".5"/><rect x="2.5" y="2.5" width="${(25.5 * battery.level).toFixed(1)}" height="11" rx="2.6" fill="${fill}" fill-opacity="${low || battery.charging ? .9 : .35}"/><text x="15.2" y="11.6" text-anchor="middle" font-size="9.5" font-weight="800" fill="currentColor">${pctN}</text></svg>`
+      : `<svg class="bat-ic" width="25" height="13" viewBox="0 0 25 13" aria-hidden="true"><rect x=".75" y=".75" width="21" height="11.5" rx="3.4" fill="none" stroke="currentColor" stroke-opacity=".5" stroke-width="1.5"/><rect x="22.8" y="4.3" width="1.8" height="4.4" rx=".9" fill="currentColor" fill-opacity=".5"/><rect x="2.5" y="2.5" width="${(17.5 * battery.level).toFixed(1)}" height="8" rx="1.8" fill="${fill}"/>${bolt}</svg>`;
+    s.innerHTML = m === "inside" ? icon(true) : m === "icon" ? icon(false) : m === "both" ? `${pctN}% ${icon(false)}` : `${pctN}%`;
+    s.setAttribute("aria-label", `Battery ${pctN}%${battery.charging ? ", charging" : ""}`);
+  }
   bus.on("settings", ({ patch }) => { if (patch.island || patch.viz) mode(); if (patch.music) q(".isl-shuffle").setAttribute("aria-pressed", String(cfg.music.shuffle)); });
   mode();
   return {

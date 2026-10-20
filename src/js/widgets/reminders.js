@@ -16,8 +16,7 @@ export function mountReminders(pane) {
   const list = el("ul", "rm-list");
   const form = el("form", "rm-add");
   form.innerHTML = `<label class="sr-only" for="rmIn">New reminder</label><input class="field" id="rmIn" placeholder="New reminder" autocomplete="off"><button class="pill" type="submit">Add</button>`;
-  const weHint = el("p", "we-hint faint", "Add reminders in Wallpaper Engine’s properties panel; typing isn’t passed to wallpapers.");
-  pane.append(title, list, form, weHint);
+  pane.append(title, list, form);
   const save = () => store.set("reminders", items);
   function render() {
     list.textContent = "";

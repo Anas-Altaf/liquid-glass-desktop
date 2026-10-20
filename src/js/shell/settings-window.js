@@ -9,8 +9,12 @@ import { toggle } from "../components/switch.js";
 import { segmented } from "../components/segmented.js";
 import { slider } from "../components/slider.js";
 import { THEMES } from "../wallpaper/themes.js";
-import { drawWaves } from "../wallpaper/wallpaper.js";
-import { setMainFile, addSlides, clearSlides, wpMedia } from "../wallpaper/media.js";
+import { drawTheme } from "../wallpaper/wallpaper.js";
+import { mediaItems, addMedia, removeMedia } from "../wallpaper/media.js";
+import { gradient } from "../wallpaper/wallpaper.js";
+import { searchCities, locateByIP } from "../widgets/weather.js";
+import { LOOKS, SKINS, UI_FONTS, applyLook } from "../core/looks.js";
+import { LAYOUTS, placeHeroAt } from "./layout.js";
 import { ZONES } from "../widgets/world-clock.js";
 import { clockFace, cardClockOpts, heroClockOpts, CLOCK_STYLES, CLOCK_FONTS, CLOCK_WEIGHTS, CLOCK_NUMERALS } from "../widgets/clock.js";
 import { DATE_FORMATS, longDate } from "../core/time.js";
@@ -21,9 +25,10 @@ import { list as playlist, addFiles, removeTrack, setIncludeBuiltin } from "../a
 import { store } from "../core/store.js";
 import { GLYPHS, ACTIONS, PRESETS } from "./dock.js";
 import { widgetEl } from "./layout.js";
+import { keyboardOn } from "../components/keyboard.js";
 
 const SECTIONS = [
-  ["widgets", "Widgets", "#0a84ff"], ["glass", "Glass", "#5e5ce6"], ["cards", "Cards", "#bf5af2"], ["wallpaper", "Wallpaper", "#ff9f0a"],
+  ["themes", "Themes", "#ff2d55"], ["widgets", "Widgets", "#0a84ff"], ["glass", "Glass", "#5e5ce6"], ["cards", "Cards", "#bf5af2"], ["wallpaper", "Wallpaper", "#ff9f0a"],
   ["island", "Top Bar", "#30b0c7"], ["dock", "Shortcuts", "#34c759"], ["clock", "Clock", "#636366"], ["music", "Music", "#fa233b"],
   ["viz", "Visualizer", "#ff375f"], ["weather", "Weather", "#32ade6"], ["data", "Data & Backup", "#8e8e93"], ["access", "Accessibility", "#0a84ff"],
 ];
@@ -35,11 +40,17 @@ const pct = v => Math.round(v * 100) + "%";
 /* cards that have a title line ("Reminders", "Notes"…) */
 const TITLED = ["world", "reminders", "notes", "focus", "system"];
 const COLORS = ["#ffffff", "#1d1d1f", "#ffd60a", "#ff9f0a", "#ff375f", "#bf5af2", "#5e5ce6", "#0a84ff", "#64d2ff", "#30d158"];
-const GRADIENTS = [["#1f2a6b", "#e0707a"], ["#0f2027", "#2c5364"], ["#ff9a8b", "#ff6a88"], ["#355c7d", "#c06c84"], ["#11998e", "#38ef7d"], ["#232526", "#414345"], ["#fc5c7d", "#6a82fb"], ["#f7971e", "#ffd200"]];
+const GRADIENTS = [["#1f2a6b", "#e0707a"], ["#0f2027", "#2c5364"], ["#ff9a8b", "#ff6a88"], ["#355c7d", "#c06c84"], ["#11998e", "#38ef7d"], ["#232526", "#414345"], ["#fc5c7d", "#6a82fb"], ["#f7971e", "#ffd200"],
+  ["#8e2de2", "#4a00e0"], ["#00c6ff", "#0072ff"], ["#f953c6", "#b91d73"], ["#a8e063", "#56ab2f"], ["#ffecd2", "#fcb69f"], ["#e0eafc", "#cfdef3"], ["#141e30", "#243b55"], ["#ee0979", "#ff6a00"]];
+const ACCENTS = ["#0a84ff", "#5e5ce6", "#bf5af2", "#ff2d55", "#ff375f", "#ff9f0a", "#ffd60a", "#30d158", "#64d2ff", "#ff2bd6", "#c6ff00", "#111111"];
+const CITIES = ["London", "New York", "Los Angeles", "Toronto", "São Paulo", "Paris", "Berlin", "Madrid", "Istanbul", "Dubai", "Karachi", "Lahore", "Islamabad", "Delhi", "Mumbai", "Singapore", "Tokyo", "Seoul", "Sydney", "Cairo", "Lagos", "Riyadh"];
+/* what "Reset" at the end of each tab puts back */
+const RESETS = { themes: ["look", "skin", "layoutMode", "accent", "uiFont"], widgets: ["widgets", "lockLayout", "positions"], glass: ["glass", "style"], cards: ["cards"], wallpaper: ["wallpaper"],
+  island: ["island"], dock: ["dock"], clock: ["clock", "hero", "calendar", "cities"], music: ["music"], viz: ["viz"], weather: ["city", "unit", "geo"], access: ["reduce", "keyboard"] };
 
 export function initSettings({ resetLayout }) {
   const win = $("#settings"), side = $("#setSide"), main = $("#setMain");
-  let current_ = "widgets", trigger = null, cardSel = "music", clockTarget = "hero", cleanup = [];
+  let current_ = "themes", trigger = null, cardSel = "music", clockTarget = "hero", cleanup = [], cityResults = null, cityStatus = "";
   SECTIONS.forEach(([id, name, color]) => {
     const b = el("button", "set-nav"); b.setAttribute("role", "tab"); b.dataset.sec = id;
     b.append(Object.assign(el("span", "dot"), { style: `background:${color}` }), name); b.onclick = () => render(id); side.append(b);
@@ -94,12 +105,21 @@ export function initSettings({ resetLayout }) {
   const pickFile = (accept, multiple, cb) => { const i = el("input"); i.type = "file"; i.accept = accept; i.multiple = multiple; i.onchange = () => i.files.length && cb([...i.files]); i.click(); };
   const btn = (text, fn, cls = "pill") => { const b = el("button", cls, text); b.type = "button"; b.onclick = fn; return b; };
   const WE = inWallpaperEngine;
+  /** 3×3 grid of spots for the desktop clock, plus Auto (the layout's default) */
+  const heroSpots = () => {
+    const g = el("div", "spots"); g.setAttribute("aria-label", "Clock position");
+    const cur = cfg.positions.hero;
+    ["tl", "tc", "tr", "ml", "mc", "mr", "bl", "bc", "br"].forEach(k => { const b = btn("", () => { placeHeroAt(k); g.querySelectorAll(".spot").forEach(x => x.setAttribute("aria-pressed", String(x === b))); }, "spot"); b.setAttribute("aria-label", { t: "Top", m: "Middle", b: "Bottom" }[k[0]] + " " + { l: "left", c: "centre", r: "right" }[k[1]]); b.setAttribute("aria-pressed", "false"); g.append(b); });
+    const auto = btn("Auto", () => { placeHeroAt("auto"); g.querySelectorAll(".spot").forEach(x => x.setAttribute("aria-pressed", String(x === auto))); }, "spot auto"); auto.setAttribute("aria-pressed", String(!cur)); g.append(auto);
+    return g;
+  };
 
   const views = {
     widgets() {
       main.append(group("On the desktop", WIDGETS.map(([id, name, sub]) => sw(name, `widgets.${id}`, sub))));
-      main.append(el("p", "group-note", "Drag any card to move it. It snaps to screen edges and to other cards, and stays where you leave it."));
-      const br = el("div", "btn-row"); br.append(btn("Reset layout", resetLayout), btn("Customize a card", () => render("cards"))); main.append(br);
+      main.append(group("Arrange", [chipRow("Layout", "layoutMode", LAYOUTS, "Where cards go until you drag them"), sw("Lock layout", "lockLayout", "Stops cards and the clock from being dragged by accident")],
+        "Drag any card to move it. It snaps to screen edges and to other cards, and stays where you leave it. Tidy up puts every card back into the layout."));
+      const br = el("div", "btn-row"); br.append(btn("Tidy up", resetLayout), btn("Customize a card", () => render("cards"))); main.append(br);
     },
     glass() {
       main.append(group("Material", [
@@ -157,32 +177,57 @@ export function initSettings({ resetLayout }) {
         const walls = el("div", "group walls");
         Object.entries(THEMES).filter(([t]) => t !== "image").forEach(([t, th]) => {
           const b = el("button", "wall-opt"); b.setAttribute("aria-pressed", String(cfg.wallpaper.theme === t));
-          const c = el("canvas"); c.width = 160; c.height = 100; drawWaves(c.getContext("2d"), 160, 100, t, 0);
+          const c = el("canvas"); c.width = 160; c.height = 100; drawTheme(c.getContext("2d"), 160, 100, t, 3);
           b.append(c, th.name); b.onclick = () => { S("wallpaper.theme", t); walls.querySelectorAll(".wall-opt").forEach(x => x.setAttribute("aria-pressed", String(x === b))); }; walls.append(b);
         });
         main.append(el("div", "group-label", "Theme"), walls);
-        main.append(group("Motion", [sw("Animate", "wallpaper.motion"), rng("Speed", "wallpaper.speed", 0.2, 3, 0.1, "×"), seg("Frame rate", "wallpaper.fps", [["30", "30"], ["60", "60"], ["120", "120"]]), sw("React to sound", "wallpaper.audioReactive", "Waves move with the music")]));
+        main.append(group("Motion", [sw("Animate", "wallpaper.motion"), rng("Speed", "wallpaper.speed", 0.2, 3, 0.1, "×"), seg("Frame rate", "wallpaper.fps", [["30", "30"], ["60", "60"], ["120", "120"]]), sw("React to sound", "wallpaper.audioReactive", "Moves with the music")]));
       }
-      if (k === "image" || k === "gif" || k === "video") {
-        const name = k === "video" ? "Video" : k === "gif" ? "GIF" : "Image";
-        main.append(group("File", [WE() ? row(name, "Choose it in Wallpaper Engine’s properties panel") : row(name, wpMedia.main ? "A file is set" : "No file yet",
-          btn("Choose…", () => pickFile(k === "video" ? "video/*" : "image/*", false, async ([f]) => { const kind = await setMainFile(f); S("wallpaper.kind", kind); render("wallpaper"); }))),
-          seg("Fit", "wallpaper.fit", [["cover", "Fill"], ["contain", "Fit"]])]));
+      if (k === "image" || k === "gif" || k === "video" || k === "slideshow") {
+        const type = k === "slideshow" ? "slides" : k, items = mediaItems(type), noun = { image: "images", gif: "GIFs", video: "videos", slides: "images" }[type];
+        const grid = el("div", "group media-grid");
+        const chosen = cfg.wallpaper.media, active = items.find(i => i.id === chosen) || items[0];
+        items.forEach(it => {
+          const t = el("div", "media-tile"); t.setAttribute("role", k === "slideshow" ? "listitem" : "radio");
+          if (k !== "slideshow") { t.setAttribute("aria-checked", String(it === active)); t.tabIndex = 0; t.onclick = () => { update({ wallpaper: { media: it.id } }, SRC); render("wallpaper", true); }; }
+          const th = it.type === "video" ? Object.assign(el("video"), { muted: true, preload: "metadata", src: it.url + "#t=1" }) : Object.assign(el("img"), { src: it.url, alt: "", loading: "lazy" });
+          t.append(th, el("span", "media-badge", it.type === "gif" ? "GIF" : it.type === "video" ? "Video" : it.source === "we" ? "Folder" : ""));
+          t.title = it.name;
+          if (it.source === "local") { const x = btn("✕", async e => { e.stopPropagation(); await removeMedia(it.id); render("wallpaper", true); }, "media-del"); x.setAttribute("aria-label", "Remove " + it.name); t.append(x); }
+          grid.append(t);
+        });
+        if (!WE()) {
+          const add = btn("", () => pickFile(k === "video" ? "video/*" : k === "gif" ? "image/gif" : "image/*", true, async l => { const added = await addMedia(l); const first = added.find(a => type === "slides" ? a.type !== "video" : a.type === type); if (first && k !== "slideshow") update({ wallpaper: { media: first.id } }, SRC); render("wallpaper", true); }), "media-tile add");
+          add.innerHTML = `<span>＋</span><small>Add ${noun}</small>`; grid.append(add);
+        }
+        if (!items.length && WE()) grid.append(el("p", "group-note", `No ${noun} yet.`));
+        main.append(el("div", "group-label", k === "slideshow" ? `Slideshow (${items.length} images)` : "Choose"), grid);
+        main.append(el("p", "group-note", WE() ? "In Wallpaper Engine’s properties panel, choose a Wallpapers folder once. Every image, GIF and video in it shows up here." : "Files you add stay in this browser. You can also drop files anywhere on the desktop."));
+        main.append(group("Options", [k === "slideshow" && rng("Change every", "wallpaper.slideEvery", 5, 600, 5, "s"), seg("Fit", "wallpaper.fit", [["cover", "Fill"], ["contain", "Fit"]])]));
       }
       if (k === "color") {
-        const pre = el("div", "chips");
-        GRADIENTS.forEach(([a, b]) => { const p = btn("", () => { update({ wallpaper: { colorA: a, colorB: b } }, SRC); render("wallpaper", true); }, "grad"); p.style.background = `linear-gradient(160deg, ${a}, ${b})`; p.setAttribute("aria-label", `Gradient ${a} to ${b}`); pre.append(p); });
-        main.append(group("Colours", [stack("Presets", null, pre), stack("From", null, swatches("From", "wallpaper.colorA", { colors: [...new Set([...GRADIENTS.map(g => g[0]), ...COLORS])].slice(0, 12) })), stack("To", null, swatches("To", "wallpaper.colorB", { colors: [...new Set([...GRADIENTS.map(g => g[1]), ...COLORS])].slice(0, 12) }))]));
+        const W = cfg.wallpaper, pre = el("div", "group grad-grid");
+        GRADIENTS.forEach(([a, b]) => {
+          const p = btn("", () => { update({ wallpaper: { colorA: a, colorB: b } }, SRC); render("wallpaper", true); }, "grad-tile");
+          p.style.background = gradient({ ...W, colorA: a, colorB: b, gradFlow: false }); p.setAttribute("aria-label", `Gradient ${a} to ${b}`);
+          p.setAttribute("aria-pressed", String(W.colorA === a && W.colorB === b)); pre.append(p);
+        });
+        main.append(el("div", "group-label", "Presets"), pre);
+        main.append(group("Style", [seg("Shape", "wallpaper.gradStyle", [["linear", "Linear"], ["radial", "Radial"], ["mesh", "Mesh"], ["conic", "Conic"]], null, () => render("wallpaper", true)),
+          W.gradStyle !== "radial" && rng("Angle", "wallpaper.gradAngle", 0, 360, 5, "°"), sw("Slow flow", "wallpaper.gradFlow", "The colours drift gently")]));
+        main.append(group("Colours", [stack("From", null, swatches("From", "wallpaper.colorA", { colors: [...new Set([...GRADIENTS.map(g => g[0]), ...COLORS])].slice(0, 14) })), stack("To", null, swatches("To", "wallpaper.colorB", { colors: [...new Set([...GRADIENTS.map(g => g[1]), ...COLORS])].slice(0, 14) }))]));
       }
-      if (k === "slideshow") main.append(group("Slideshow", [
-        WE() ? row("Images", "Choose a slideshow folder in Wallpaper Engine’s properties panel") : row("Images", `${wpMedia.slides.length} added`, btn("Add images…", () => pickFile("image/*", true, async l => { await addSlides(l); bus.emit("wallpaper:media"); render("wallpaper"); }))),
-        !WE() && row("Clear images", null, btn("Clear", async () => { await clearSlides(); render("wallpaper"); })), rng("Change every", "wallpaper.slideEvery", 5, 600, 5, "s"), seg("Fit", "wallpaper.fit", [["cover", "Fill"], ["contain", "Fit"]])]));
       main.append(group("Look", [rng("Dim", "wallpaper.dim", 0, 0.8, 0.02, "", pct)]));
     },
     island() {
       main.append(group("Top bar", [seg("Mode", "island.mode", [["island", "Island"], ["bar", "Full bar"], ["auto", "Auto-hide"], ["hidden", "Hidden"]]),
-        sw("Expand on hover", "island.expandOnHover", "Shows now playing and quick actions"), sw("Show time", "island.showTime"), sw("Show seconds", "island.seconds"), sw("Show weather", "island.showWeather")],
-        "Auto-hide slides the island in when the pointer touches the top edge. When hidden, right-click the desktop for menus. Time and date format are in Clock."));
+        sw("Expand on hover", "island.expandOnHover", "Shows now playing and quick actions")],
+        "Auto-hide slides the island in when the pointer touches the top edge. When hidden, right-click the desktop for menus."));
+      main.append(group("Show in the island", [
+        sw("Time", "island.showTime"), sw("Seconds", "island.seconds"), sw("Weather", "island.showWeather"), sw("Now playing", "island.showNowPlaying"),
+        sw("Network", "island.showNetwork"), sw("Control Center button", "island.showCC"), sw("Menu button (•••)", "island.showMenu", "Right-click the desktop for the same menu"),
+        seg("Battery", "island.battery", [["off", "Off"], ["percent", "87%"], ["icon", "Icon"], ["both", "Both"], ["inside", "In icon"]], "Desktop PCs without a battery report 100%"),
+      ], "Time and date format are in Clock."));
     },
     dock() {
       main.append(group("Shortcut bar", [seg("Show", "dock.mode", [["hidden", "Hidden"], ["auto", "Auto-hide"], ["always", "Always"]])]));
@@ -264,11 +309,11 @@ export function initSettings({ resetLayout }) {
           stack("Colour", "Automatic follows the wallpaper theme", swatches("Colour", "hero.color", { auto: true })),
           rng("Opacity", "hero.opacity", 0.2, 1, 0.05, "", pct), rng("Shadow", "hero.shadow", 0, 1, 0.05, "", pct),
           sw("Glass plate", "hero.plate", "Puts the clock on a pane of glass"),
-          seg("Align", "hero.align", [["left", "Left"], ["center", "Centre"], ["right", "Right"]]),
-          row("Position", "Drag the desktop clock to move it", btn("Centre it", () => U("positions.hero"), "pill small")),
+          seg("Text align", "hero.align", [["left", "Left"], ["center", "Centre"], ["right", "Right"]]),
+          stack("Position", "Or drag the clock anywhere", heroSpots()),
         ]));
       } else if (clockTarget === "card") {
-        main.append(group("Clock card", [sw("Show card", "widgets.clock"), ...styleRows("clock", [rng("Size", "clock.size", 0.6, 1.6, 0.05, "×")])],
+        main.append(group("Clock card", [sw("Show card", "widgets.clock"), ...styleRows("clock", [rng("Size", "clock.size", 0.6, 1.6, 0.05, "×"), seg("Align", "clock.align", [["left", "Left"], ["center", "Centre"], ["right", "Right"]])])],
           cfg.widgets.clock ? "Glass, width and text colour are in Cards." : "The card is hidden; turn on Show card to see it on the desktop."));
       } else {
         main.append(group("Top bar clock", [sw("Show time", "island.showTime"), sw("Show seconds", "island.seconds")], "The expanded island shows the date in the format above."));
@@ -303,11 +348,27 @@ export function initSettings({ resetLayout }) {
         rng("Sensitivity", "viz.sensitivity", 0.3, 2.5, 0.05, "×"), rng("Bars", "viz.bars", 12, 64, 1), rng("Bottom height", "viz.edgeHeight", 30, 260, 5, "px")]));
     },
     weather() {
+      const cur = cfg.geo && cfg.geo.name === cfg.city ? cfg.geo.label : cfg.city;
       const form = el("form", "row");
-      form.innerHTML = `<label class="label" for="cityIn">City</label><input class="field" id="cityIn" autocomplete="off" style="max-width:220px"><button class="pill" type="submit">Update</button>`;
-      form.querySelector("input").value = cfg.city;
-      form.onsubmit = e => { e.preventDefault(); const v = form.querySelector("input").value.trim(); if (v) update({ city: v }); };
-      main.append(group("Location", [form, seg("Units", "unit", [["c", "°C"], ["f", "°F"]])], WE() ? "Wallpaper Engine doesn’t pass typing to wallpapers; set the city in its properties panel." : "Weather comes from Open-Meteo."));
+      const inp = el("input", "field"); inp.id = "cityIn"; inp.autocomplete = "off"; inp.placeholder = "Search a city"; inp.setAttribute("aria-label", "City");
+      form.append(el("span", "label", "Search"), inp, btn("Search", null)); form.lastChild.type = "submit";
+      form.onsubmit = async e => {
+        e.preventDefault(); const q = inp.value.trim(); if (!q) return;
+        cityStatus = "Searching…"; cityResults = null; render("weather", true);
+        try { cityResults = await searchCities(q); cityStatus = cityResults.length ? "" : `No city called “${q}”.`; } catch { cityStatus = "Search needs an internet connection."; }
+        render("weather", true);
+      };
+      const pick = r => { cityResults = null; cityStatus = ""; update({ city: r.name, geo: r }, SRC); render("weather", true); };
+      const results = el("div", "chips");
+      (cityResults || []).forEach(r => { const b = btn(r.label, () => pick(r), "chip"); results.append(b); });
+      const locate = btn("Use my location", async () => { cityStatus = "Finding you…"; render("weather", true); try { pick(await locateByIP()); } catch { cityStatus = "Couldn’t detect a location. Search or pick a city instead."; render("weather", true); } }, "pill small");
+      main.append(group("Location", [
+        row("Current", cur, locate), form,
+        (cityResults && cityResults.length) ? stack("Results", "Pick the right one", results) : null,
+        cityStatus ? row(cityStatus) : null,
+        stack("Popular", null, chips("Popular cities", cfg.geo ? "" : cfg.city, CITIES.map(c => [c, c]), c => { update({ city: c, geo: null }, SRC); render("weather", true); })),
+        seg("Units", "unit", [["c", "°C"], ["f", "°F"]]),
+      ], keyboardOn() ? "Click the search box and type with the on-screen keyboard." : "Weather comes from Open-Meteo. “Use my location” looks up your approximate city from your internet connection."));
     },
     data() {
       main.append(el("p", "group-note", "Everything saves automatically: layout, settings, reminders, notes, playlist files and wallpaper files. It stays after closing the browser or Wallpaper Engine and after a restart, as long as that app’s storage isn’t cleared. Keep a backup to be safe."));
@@ -317,7 +378,32 @@ export function initSettings({ resetLayout }) {
       main.append(ta);
       main.append(group("Start over", [row("Reset everything", "Settings and layout go back to defaults", confirmBtn("Reset", "Click again to reset", resetAll))]));
     },
-    access() { main.append(group("Display", [sw("Reduce transparency", "reduce", "Solid surfaces instead of glass")], "Animations also calm down when your system asks for reduced motion.")); },
+    access() {
+      main.append(group("Display", [sw("Reduce transparency", "reduce", "Solid surfaces instead of glass")], "Animations also calm down when your system asks for reduced motion."));
+      main.append(group("Typing", [seg("On-screen keyboard", "keyboard", [["auto", "Auto"], ["on", "Always"], ["off", "Off"]], "Auto shows it in Wallpaper Engine, which doesn’t pass key presses to wallpapers")]));
+    },
+    themes() {
+      const looks = el("div", "looks");
+      LOOKS.forEach(L => {
+        const b = el("button", "look-tile"); b.type = "button"; b.setAttribute("aria-pressed", String(cfg.look === L.id));
+        const pv = el("div", "look-pv"); pv.dataset.skin = L.skin; pv.dataset.layout = L.layoutMode;
+        if (L.accent !== "auto") pv.style.setProperty("--accent", L.accent);
+        if (L.wallpaper.kind === "theme") { const c = el("canvas"); c.width = 200; c.height = 120; drawTheme(c.getContext("2d"), 200, 120, L.wallpaper.theme, 3); pv.append(c); }
+        else pv.style.background = gradient({ ...DEFAULTS.wallpaper, ...L.wallpaper });
+        const cards = el("div", "lp-cards"); for (let i = 0; i < 3; i++) cards.append(el("span", "lp-card"));
+        pv.append(el("span", "lp-clock", L.hero.style === "words" ? "four" : L.hero.style === "analog" ? "◷" : "9:41"), cards);
+        b.append(pv, el("b", null, L.name), el("small", null, L.sub));
+        b.onclick = () => { applyLook(L.id); render("themes", true); };
+        looks.append(b);
+      });
+      main.append(el("div", "group-label", "Presets"), looks, el("p", "group-note", "A preset sets the surface style, layout, wallpaper, clock and accent together. Fine-tune anything afterwards."));
+      main.append(group("Mix your own", [
+        chipRow("Surface style", "skin", SKINS, "Liquid Glass refracts the wallpaper; the others are solid styles"),
+        chipRow("Layout", "layoutMode", LAYOUTS, "Where cards go until you drag them"),
+        stack("Accent colour", "Calendar today, focus ring, switches, selections", swatches("Accent", "accent", { auto: true, colors: ACCENTS })),
+        chipRow("Interface font", "uiFont", UI_FONTS.map(([v, n]) => [v, n, "font-" + v])),
+      ]));
+    },
   };
 
   function render(sec, keepScroll) {
@@ -327,6 +413,13 @@ export function initSettings({ resetLayout }) {
     const scroll = main.scrollTop; main.textContent = "";
     main.append(el("h3", null, SECTIONS.find(s => s[0] === current_)[1]));
     views[current_]();
+    const keys = RESETS[current_];
+    if (keys) {
+      const name = SECTIONS.find(x => x[0] === current_)[1];
+      const br = el("div", "btn-row tab-reset");
+      br.append(confirmBtn(`Reset ${name}`, "Click again to reset", () => { keys.forEach(k => S(k, structuredClone(DEFAULTS[k]))); if (current_ === "music") setIncludeBuiltin(true); render(current_, true); }));
+      main.append(br);
+    }
     main.scrollTop = keepScroll ? scroll : 0;
   }
   function open(sec, from, card) { if (card) cardSel = card; trigger = from || trigger; render(sec || current_); if (win.hidden) liquidOpen(win, trigger); }

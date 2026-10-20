@@ -10,7 +10,8 @@ Import only the built `wallpaper/` folder (index.html, app.js, app.css, project.
 
 - The properties panel has the theme, image/GIF/video file, slideshow folder, music folder, glass, top bar, shortcut bar, desktop clock (style, size, font, seconds, glass plate), weather city, reminders and notes text, and a switch for each card.
 - Changes you make inside the wallpaper are saved and survive restarts. Wallpaper Engine properties are only applied when you change them, so they don't overwrite your in-wallpaper choices.
-- Wallpaper Engine passes clicks but not typing or system pop-ups to wallpapers. Settings therefore uses glass pickers instead of drop-downs, colour dialogs and confirm boxes; use the properties panel for city, reminders, notes and files.
+- Wallpaper Engine passes clicks but not typing or system pop-ups to wallpapers. Text fields (city search, reminders, notes, shortcuts) open an on-screen glass keyboard instead, and Settings uses glass pickers instead of drop-downs, colour dialogs and confirm boxes.
+- Choose a **Wallpapers folder** in the properties panel once; every image, GIF and video in it can then be picked in Settings › Wallpaper.
 - For the Music card to follow Spotify and other apps, turn on media integration in Wallpaper Engine's settings.
 
 ## Use it in a browser
@@ -21,6 +22,7 @@ Open `dist/glass-desktop.html`. Chrome and Edge show the full refraction; Safari
 
 - Drag any card or the desktop clock; it snaps to edges and other cards and stays put.
 - Right-click the desktop, a card, or the clock for menus. The island's ••• button opens the main menu.
+- **Themes**: one-click looks (Liquid Glass, Brutalist, Cyberpunk, Paper Desk, Retro OS, Clay, Zen, Deep Space, Acid, Lava Lamp), or mix your own: surface style (glass, brutalist, neon, paper, retro, clay, bare), layout (columns, sidebar left/right, bento grid, bottom row), accent colour and interface font.
 - Settings covers glass (blur, saturation, light, tint, roundness, border, shine, refraction, shadow, quality, pointer light), wallpaper types, top bar modes, shortcuts, music playback and playlist, visualizers, weather, and backup/restore.
 - **Cards**: any card can override width, content size, padding, every glass value, Clear/Tinted style, quality, text colour and its title. *Apply to all cards* copies one card's look to the rest.
 - **Clock**: a shared time format (24-hour, leading zero, AM/PM, blinking colon, date format), then separate settings with a live preview for the desktop clock (style, font, weight, size, seconds, date, analog numerals, colour, opacity, shadow, glass plate, alignment), the Clock card and the top bar. Also the calendar's first weekday and World Clock cities.
@@ -35,7 +37,7 @@ glass-desktop/
 ├─ assets/preview.jpg      Wallpaper Engine preview
 ├─ src/
 │  ├─ index.html           markup template
-│  ├─ styles/              tokens · base · glass · components · shell · widgets
+│  ├─ styles/              tokens · base · glass · components · shell · widgets · skins
 │  └─ js/
 │     ├─ main.js           wiring and boot
 │     ├─ core/             util, store (localStorage), idb (files), bus, settings, time

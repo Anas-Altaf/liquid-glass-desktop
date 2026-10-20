@@ -6,7 +6,8 @@ import { bus } from "./core/bus.js";
 import { glassify, setOverrides, setGlobal, refresh, repaintLight } from "./glass/glass.js";
 import { Wallpaper } from "./wallpaper/wallpaper.js";
 import { THEMES } from "./wallpaper/themes.js";
-import { loadWallpaperMedia, wpMedia } from "./wallpaper/media.js";
+import { loadWallpaperMedia, wpMedia, mediaItems, findMedia, addMedia, setWEFolder as setWEMediaFolder } from "./wallpaper/media.js";
+import { initKeyboard } from "./components/keyboard.js";
 import { showMenu, closeMenus } from "./components/menu.js";
 import { mountClock, clockFace, heroClockOpts } from "./widgets/clock.js";
 import { mountWeather } from "./widgets/weather.js";
@@ -70,12 +71,14 @@ function mainMenu(at) {
     { label: "Shortcut Bar", checked: cfg.dock.mode !== "hidden", action: () => set("dock.mode", cfg.dock.mode === "hidden" ? "always" : "hidden") },
     { label: "Desktop Clock", checked: cfg.hero.show, action: () => set("hero.show", !cfg.hero.show) },
     "-",
-    { label: "Reset Layout", action: resetLayout },
+    { label: "Lock Layout", checked: cfg.lockLayout, action: () => set("lockLayout", !cfg.lockLayout) },
+    { label: "Tidy Up Layout", action: resetLayout },
   ], at, "Desktop");
 }
 const island = initIsland({ openMenu: mainMenu, openSettings, toggleCC: from => cc.toggle(from) });
 initDock(actions);
 enableDragging();
+initKeyboard();
 
 addEventListener("contextmenu", e => {
   if (e.target.closest("input, textarea, .menu, #settings, #cc")) return;
@@ -101,7 +104,7 @@ addEventListener("dragover", e => e.preventDefault());
 addEventListener("drop", async e => {
   e.preventDefault(); const fl = [...e.dataTransfer.files]; if (!fl.length) return;
   const media = fl.find(f => /^(image|video)\//.test(f.type));
-  if (media) { const { setMainFile } = await import("./wallpaper/media.js"); const kind = await setMainFile(media); set("wallpaper.kind", kind); }
+  if (media) { const [it] = await addMedia(fl.filter(f => /^(image|video)\//.test(f.type))); if (it) update({ wallpaper: { kind: it.type, media: it.id } }); }
   if (fl.some(f => f.type.startsWith("audio/"))) { const { addFiles } = await import("./audio/player.js"); await addFiles(fl); }
 });
 
@@ -129,6 +132,7 @@ function applyCards() {
     prop("--card-zoom", c.zoom); prop("--card-pad", c.pad != null ? c.pad + "px" : null);
   });
 }
+let lastKind = "";
 function applyWallpaper() {
   const w = cfg.wallpaper, root = document.documentElement;
   const th = THEMES[w.theme] || THEMES.dusk;
@@ -136,14 +140,25 @@ function applyWallpaper() {
   root.style.setProperty("--page", w.kind === "theme" ? th.bg : "#111");
   root.style.setProperty("--hero-ink", w.kind === "theme" ? th.hero : "#fff");
   wall.set({ ...w, motion: w.motion && !reducedMotion() });
-  if (w.kind === "image" || w.kind === "gif") wall.media("image", wpMedia.main && !wpMedia.mainType.startsWith("video") ? wpMedia.main : wpMedia.we.image);
-  if (w.kind === "video") wall.media("video", wpMedia.main && wpMedia.mainType.startsWith("video") ? wpMedia.main : wpMedia.we.video);
-  if (w.kind === "slideshow") wall.setSlides(wpMedia.slides.length ? wpMedia.slides : wpMedia.we.folder);
+  /* the picked library item, or the newest of that type */
+  const pick = type => { const it = findMedia(w.media); if (it && it.type === type) return it.url; const first = mediaItems(type)[0]; return first ? first.url : ""; };
+  if (w.kind === "image" || w.kind === "gif") wall.media("image", pick(w.kind));
+  if (w.kind === "video") wall.media("video", pick("video"));
+  if (w.kind === "slideshow") { const slides = mediaItems("slides").map(i => i.url); if (slides.join() !== wall.slides.join() || lastKind !== "slideshow") wall.setSlides(slides); }
+  lastKind = w.kind;
   $("#dim").style.opacity = String(w.dim);
 }
 function applyMisc() {
   const root = document.documentElement;
   root.dataset.style = cfg.style; root.dataset.reduce = String(cfg.reduce);
+  root.dataset.skin = cfg.skin || "glass";
+  if (cfg.uiFont && cfg.uiFont !== "system") root.dataset.uifont = cfg.uiFont; else delete root.dataset.uifont;
+  /* accent: "auto" keeps each control's own colour (blue selection, red today, green switches) */
+  if (cfg.accent && cfg.accent !== "auto") {
+    const [r, g, b] = [1, 3, 5].map(i => parseInt(cfg.accent.slice(i, i + 2), 16) / 255);
+    root.style.setProperty("--accent", cfg.accent);
+    root.style.setProperty("--on-accent", 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.6 ? "#111" : "#fff");
+  } else { root.style.removeProperty("--accent"); root.style.removeProperty("--on-accent"); }
   const h = $("#hero"), hc = cfg.hero;
   h.hidden = !hc.show;
   h.classList.toggle("plate", !!hc.plate);
@@ -166,10 +181,11 @@ function syncWidgets() { ORDER.forEach(id => { const n = widgetEl(id); if (n && 
 bus.on("settings", ({ patch }) => {
   if (patch.glass || "reduce" in patch || patch.cards) applyGlass();
   if (patch.wallpaper) applyWallpaper();
-  if (patch.hero || patch.viz || "style" in patch || "reduce" in patch) { applyMisc(); tick(true); requestAnimationFrame(heroRefresh); }
+  if (patch.hero || patch.viz || "style" in patch || "reduce" in patch || "skin" in patch || "accent" in patch || "uiFont" in patch) { applyMisc(); tick(true); requestAnimationFrame(heroRefresh); }
   if (patch.widgets) syncWidgets();
   if (patch.cards || patch.dock) layout({ animate: true });
-  if (patch.positions) layout({ animate: true });
+  if (patch.positions || "layoutMode" in patch) layout({ animate: true });
+  if ("skin" in patch || "uiFont" in patch) requestAnimationFrame(() => { layout({ animate: true }); refresh(); });
   if (patch.clock) { tick(true); W.world.render(); W.weather.render(); layout(); requestAnimationFrame(heroRefresh); }
   if (patch.calendar) W.calendar.render();
   if ("city" in patch || "unit" in patch) W.weather.load();
@@ -186,7 +202,7 @@ const WE = {
   refraction: v => ({ glass: { refraction: +v / 100 } }), blur: v => ({ glass: { blur: +v } }), roundness: v => ({ glass: { radius: +v } }), border: v => ({ glass: { rim: +v / 100 } }),
   topbar: v => ({ island: { mode: v } }), shortcutbar: v => ({ dock: { mode: v } }), desktopclock: v => ({ hero: { show: !!v } }), clockstyle: v => ({ hero: { style: v } }),
   clocksize: v => ({ hero: { size: +v / 100 } }), clockfont: v => ({ hero: { font: v } }), clockseconds: v => ({ hero: { seconds: !!v } }), clockplate: v => ({ hero: { plate: !!v } }),
-  clock24: v => ({ clock: { h24: !!v } }), city: v => ({ city: String(v || "London") }), units: v => ({ unit: v }), musicsource: v => ({ music: { source: v } }),
+  clock24: v => ({ clock: { h24: !!v } }), city: v => ({ city: String(v || "London"), geo: null }), units: v => ({ unit: v }), musicsource: v => ({ music: { source: v } }),
   reducetransparency: v => ({ reduce: !!v }),
 };
 bus.on("we:props", props => {
@@ -197,8 +213,8 @@ bus.on("we:props", props => {
   changed.forEach(([k, v]) => {
     if (WE[k]) merge(patch, WE[k](v));
     else if (k.startsWith("show") && k.slice(4) in cfg.widgets) merge(patch, { widgets: { [k.slice(4)]: !!v } });
-    else if (k === "customimage") { wpMedia.we.image = v ? "file:///" + v : ""; if (v) merge(patch, { wallpaper: { kind: /\.gif$/i.test(v) ? "gif" : "image" } }); }
-    else if (k === "customvideo") { wpMedia.we.video = v ? "file:///" + v : ""; if (v) merge(patch, { wallpaper: { kind: "video" } }); }
+    else if (k === "customimage") { wpMedia.we.image = v ? "file:///" + v : ""; if (v) merge(patch, { wallpaper: { kind: /\.gif$/i.test(v) ? "gif" : "image", media: "we:image" } }); }
+    else if (k === "customvideo") { wpMedia.we.video = v ? "file:///" + v : ""; if (v) merge(patch, { wallpaper: { kind: "video", media: "we:video" } }); }
     else if (k === "reminders") bus.emit("reminders:set", v);
     else if (k === "notes") { if (v || cfg.weLast.notes) bus.emit("notes:set", String(v || "")); }
     else if (k === "wallpaperfolder" && v) merge(patch, { wallpaper: { kind: "slideshow" } });
@@ -213,7 +229,7 @@ bus.on("we:props", props => {
 bus.on("we:dir", ({ name, files }) => {
   if (name === "musicfolder") setWEFolder(files);
   /* the folder only switches to Slideshow when it is chosen (see we:props), not on every start */
-  if (name === "wallpaperfolder") { wpMedia.we.folder = files.filter(f => /\.(jpe?g|png|webp|gif|bmp)$/i.test(f)).map(f => "file:///" + f); applyWallpaper(); }
+  if (name === "wallpaperfolder") setWEMediaFolder(files);
 });
 bus.on("we:fps", fps => set("wallpaper.fps", Math.max(10, Math.min(144, fps)), { silent: true }));
 bus.on("we:paused", p => { wall.paused = p; });

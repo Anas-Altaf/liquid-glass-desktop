@@ -4,7 +4,7 @@ import { segmented } from "../components/segmented.js";
 export function mountFocus(pane) {
   const C = 2 * Math.PI * 48;
   pane.innerHTML = `<div class="w-title">Focus Timer</div><div class="fc-body"><div class="fc-ring">
-    <svg width="110" height="110" viewBox="0 0 110 110" aria-hidden="true"><circle cx="55" cy="55" r="48" fill="none" stroke="var(--track-bg)" stroke-width="9"/><circle class="fc-arc" cx="55" cy="55" r="48" fill="none" stroke="#bf5af2" stroke-width="9" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="0"/></svg>
+    <svg width="110" height="110" viewBox="0 0 110 110" aria-hidden="true"><circle cx="55" cy="55" r="48" fill="none" stroke="var(--track-bg)" stroke-width="9"/><circle class="fc-arc" cx="55" cy="55" r="48" fill="none" style="stroke: var(--accent, #bf5af2)" stroke-width="9" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="0"/></svg>
     <span class="t num" role="timer" aria-live="off"></span></div><div class="fc-btns"><button class="pill fc-start">Start</button><button class="pill fc-reset">Reset</button></div></div>`;
   const q = s => pane.querySelector(s);
   const s = { total: 1500, left: 1500, running: false, endAt: 0 };

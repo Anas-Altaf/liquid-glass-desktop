@@ -6,7 +6,7 @@
 <title>Glass Desktop</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@300;500;700;800&family=Nunito:wght@300;500;700;800&family=Oswald:wght@300;500;700&family=Playfair+Display:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@300;500;700;800&family=Nunito:wght@300;500;700;800&family=Oswald:wght@300;500;700&family=Playfair+Display:wght@400;500;700;800&family=VT323&display=swap" rel="stylesheet">
 <style>
 /* Design tokens. Ink and material adapt to the wallpaper: light glass gets dark ink. */
 :root {
@@ -62,11 +62,25 @@ button { cursor: pointer; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 :focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 .num { font-variant-numeric: tabular-nums; }
+
+/* glass scrollbars: a thin frosted pill that only shows while you're over the list */
+::-webkit-scrollbar { width: 12px; height: 12px; background: transparent; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-corner { background: transparent; }
+::-webkit-scrollbar-thumb { border: 3.5px solid transparent; border-radius: 8px; background-clip: padding-box; background-color: color-mix(in srgb, var(--ink) 28%, transparent); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .18); transition: background-color .2s; }
+::-webkit-scrollbar-thumb:hover { background-color: color-mix(in srgb, var(--ink) 48%, transparent); border-width: 2.5px; }
+::-webkit-scrollbar-thumb:active { background-color: color-mix(in srgb, var(--accent, var(--ink)) 65%, transparent); }
+:not(:hover)::-webkit-scrollbar-thumb { background-color: transparent; box-shadow: none; }
+::-webkit-scrollbar-button { display: none; }
+@supports not selector(::-webkit-scrollbar) { * { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--ink) 30%, transparent) transparent; } }
 .soft { color: var(--ink-soft); } .faint { color: var(--ink-faint); }
 
 #wall { position: relative; width: 100%; height: 100%; overflow: hidden; }
 #wallpaper, #wpImage, #wpImage2, #wpVideo { position: absolute; inset: 0; width: 100%; height: 100%; display: block; object-fit: cover; }
 #wpImage2 { opacity: 0; }
+#wall.flow { background-size: 300% 300% !important; animation: grad-flow 40s ease-in-out infinite alternate; }
+@keyframes grad-flow { from { background-position: 0% 30%; } to { background-position: 100% 70%; } }
+@media (prefers-reduced-motion: reduce) { #wall.flow { animation: none; } }
 #edgeViz { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: 90px; }
 #dim { position: absolute; inset: 0; background: #000; opacity: 0; pointer-events: none; transition: opacity .3s ease; }
 
@@ -109,6 +123,46 @@ button { cursor: pointer; }
 .analog .h-m { stroke-width: calc(3px * var(--cf-wf, 1)); }
 .analog .tk-major { stroke-width: calc(2.2px * var(--cf-wf, 1)); }
 .analog .tk-minor { stroke-width: calc(.9px * var(--cf-wf, 1)); }
+.clockface[data-font="pixel"] { --cf-font: "VT323", "Courier New", monospace; }
+.widget[data-w="clock"] .clockface { text-align: var(--cf-align, left); }
+.widget[data-w="clock"] .cf-analog, .widget[data-w="clock"] .cf-rings, .widget[data-w="clock"] .cf-flip { justify-content: var(--cf-justify, start); }
+
+/* outline: hollow numbers */
+.cf-outline .cf-time { color: transparent; -webkit-text-stroke: calc(2px * var(--cf-scale, 1) * var(--hero-fit, 1)) currentColor; font-weight: var(--cf-weight, 800); }
+.cf-outline .cf-sec, .cf-outline .cf-ap { -webkit-text-stroke: 1.2px currentColor; }
+/* neon: glowing tube letters in the accent colour */
+.cf-neon .cf-time { color: #fff; font-weight: var(--cf-weight, 300); text-shadow: 0 0 6px #fff, 0 0 14px var(--accent, #ff2bd6), 0 0 30px var(--accent, #ff2bd6), 0 0 60px var(--accent, #ff2bd6); }
+.cf-neon .cf-date { color: #fff; text-shadow: 0 0 10px var(--accent, #ff2bd6); }
+/* LCD: dark segments on a lit panel, with the unlit "88:88" ghosted behind */
+.cf-lcd { position: relative; display: inline-block; padding: .18em .35em .1em; border-radius: .18em; background: linear-gradient(180deg, #b7c9a0, #9fb487); color: #1c2a12; box-shadow: inset 0 2px 6px rgba(0, 0, 0, .35); font-size: calc(58px * var(--cf-scale, 1)); }
+#hero .cf-lcd { font-size: calc(clamp(64px, 10vw, 168px) * var(--hero-size) * var(--hero-fit)); }
+.cf-lcd .cf-time { font-family: "VT323", ui-monospace, monospace; font-size: 1em; font-weight: 400; letter-spacing: .02em; text-shadow: none; }
+.cf-lcd .cf-ghost { position: absolute; inset: .18em .35em .1em; opacity: .12; }
+.cf-lcd .cf-sec { opacity: .8; }
+/* flip: split-flap tiles */
+.cf-flip { display: inline-flex; align-items: center; gap: .06em; font-family: var(--cf-font); font-weight: var(--cf-weight, 700); font-size: calc(58px * var(--cf-scale, 1)); line-height: 1; }
+#hero .cf-flip { font-size: calc(clamp(56px, 8vw, 140px) * var(--hero-size) * var(--hero-fit)); }
+.cf-flip .fl { position: relative; display: inline-grid; place-items: center; width: .72em; height: 1.08em; border-radius: .1em; background: linear-gradient(180deg, rgba(30, 30, 36, .92) 50%, rgba(20, 20, 26, .95) 50%); color: #f5f5f7; box-shadow: 0 .05em .14em rgba(0, 0, 0, .35); transform-origin: 50% 50%; text-shadow: none; }
+.cf-flip .fl::after { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: max(1px, .02em); background: rgba(0, 0, 0, .55); }
+.cf-flip .fl-sep { margin: 0 .04em; opacity: .7; }
+.cf-flip .fl-s { display: inline-flex; gap: .04em; margin-left: .12em; font-size: .45em; align-self: flex-end; }
+.cf-flip .cf-ap { font-size: .3em; align-self: flex-end; margin-left: .2em; }
+/* words: the time spelled out */
+.cf-words { font-family: var(--cf-font); line-height: .95; font-size: calc(40px * var(--cf-scale, 1)); letter-spacing: -0.02em; }
+#hero .cf-words { font-size: calc(clamp(44px, 6.5vw, 116px) * var(--hero-size) * var(--hero-fit)); }
+.cf-words span, .cf-words b { display: block; }
+.cf-words .w0 { font-size: .45em; font-weight: 600; opacity: .6; letter-spacing: 0; margin-bottom: .1em; }
+.cf-words .w1 { font-weight: var(--cf-weight, 800); text-transform: capitalize; }
+.cf-words .w2 { font-weight: 300; opacity: .8; }
+/* rings: hours, minutes, seconds as progress rings */
+.cf-rings { position: relative; display: inline-grid; place-items: center; width: calc(150px * var(--cf-scale, 1)); aspect-ratio: 1; }
+#hero .cf-rings { width: calc(250px * var(--hero-size) * var(--hero-fit)); }
+.cf-rings svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.cf-rings .rg-track { stroke: currentColor; stroke-opacity: .14; }
+.cf-rings .rg-h { stroke: var(--accent, #ff375f); } .cf-rings .rg-m { stroke: var(--accent, #30d158); opacity: .8; } .cf-rings .rg-s { stroke: currentColor; opacity: .7; }
+.cf-rings .rg { transition: stroke-dashoffset .6s var(--ease); }
+.cf-rings .cf-time { position: relative; font-size: calc(26px * var(--cf-scale, 1)); }
+#hero .cf-rings .cf-time { font-size: calc(46px * var(--hero-size) * var(--hero-fit)); }
 .snap-guide { position: fixed; z-index: 70; display: none; pointer-events: none; background: rgba(10, 132, 255, .8); box-shadow: 0 0 6px rgba(10, 132, 255, .6); }
 .snap-guide.gx { top: 0; bottom: 0; width: 1px; }
 .snap-guide.gy { left: 0; right: 0; height: 1px; }
@@ -177,7 +231,7 @@ button { cursor: pointer; }
 
 /* switch: knob stretches and turns to glass while pressed */
 .switch { position: relative; width: 52px; height: 32px; flex: none; border: 0; padding: 0; border-radius: 16px; background: var(--track-bg); transition: background-color .25s ease; }
-.switch[aria-checked="true"] { background: var(--green); }
+.switch[aria-checked="true"] { background: var(--accent, var(--green)); }
 .sw-knob { position: absolute; top: 3px; left: 3px; width: 26px; height: 26px; border-radius: 13px; background: #fff; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25); transition: transform .32s var(--spring), width .25s var(--spring), left .25s var(--spring), background-color .2s ease; }
 .switch[aria-checked="true"] .sw-knob { transform: translateX(20px); }
 .sw-knob > .lg-warp, .sw-knob > .lg-sheen, .sw-knob > .lg-rim { opacity: 0; transition: opacity .15s ease; }
@@ -196,7 +250,7 @@ button { cursor: pointer; }
 .menu { z-index: 60; min-width: 220px; border-radius: 18px; padding: 6px; }
 .menu > .pane { display: grid; }
 .menu-item { display: grid; grid-template-columns: 18px 1fr auto; align-items: center; gap: 6px; height: 32px; padding: 0 10px 0 8px; border: 0; border-radius: 10px; background: transparent; text-align: left; font-weight: 500; font-size: 13.5px; }
-.menu-item:hover, .menu-item:focus-visible { background: var(--blue); color: #fff; outline: none; }
+.menu-item:hover, .menu-item:focus-visible { background: var(--accent, var(--blue)); color: var(--on-accent, #fff); outline: none; }
 .menu-item:disabled { opacity: .45; }
 .menu-hint { font-size: 12px; color: var(--ink-faint); }
 .menu-item:hover .menu-hint { color: rgba(255, 255, 255, .8); }
@@ -224,7 +278,7 @@ button { cursor: pointer; }
 .isl-title { font-weight: 700; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .isl-artist { font-size: 13px; color: var(--ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .isl-ctrl { display: flex; align-items: center; gap: 2px; }
-.isl-ctrl .icon-btn[aria-pressed="true"] { color: var(--blue); }
+.isl-ctrl .icon-btn[aria-pressed="true"] { color: var(--accent, var(--blue)); }
 .isl-actions { display: flex; gap: 8px; margin-top: 12px; justify-content: flex-end; }
 .iv { width: 110px; height: 34px; opacity: 0; transition: opacity .4s ease; pointer-events: none; }
 #islandWrap.viz-on .iv { opacity: 1; }
@@ -233,11 +287,13 @@ button { cursor: pointer; }
 #islandWrap[data-mode="bar"] .iv { display: none; }
 #islandWrap[data-mode="bar"] .isl-status { margin-left: auto; }
 #islandWrap[data-mode="auto"] { translate: -50% calc(-100% - 20px); }
-#islandWrap[data-mode="auto"].revealed, #islandWrap[data-mode="auto"]:hover, #islandWrap[data-mode="auto"]:focus-within { translate: -50% 0; }
+#islandWrap[data-mode="auto"].revealed, #islandWrap[data-mode="auto"]:focus-within { translate: -50% 0; }
+.isl-bat { display: inline-flex; align-items: center; gap: 4px; }
+.bat-ic { display: block; }
 
 /* ---------- shortcut bar ---------- */
 .dock { left: 50%; bottom: calc(10px + env(safe-area-inset-bottom, 0px)); height: 70px; border-radius: 24px; translate: -50% 0; z-index: 20; transition: translate .45s var(--spring); }
-.dock[data-mode="auto"]:not(.revealed):not(:hover) { translate: -50% calc(100% + 24px); }
+.dock[data-mode="auto"]:not(.revealed):not(:focus-within) { translate: -50% calc(100% + 24px); }
 .dock .pane { height: 100%; display: flex; align-items: flex-end; gap: 8px; padding: 0 12px 10px; }
 .app {
   --mag: 1; position: relative; width: 50px; height: 50px; border: 0; padding: 0; border-radius: 14px; display: grid; place-items: center; color: var(--ink);
@@ -258,7 +314,7 @@ button { cursor: pointer; }
 .tile.wide { grid-column: 1 / -1; }
 .tile-btn { width: 100%; display: flex; align-items: center; gap: 10px; border: 0; padding: 0; background: none; text-align: left; }
 .tile-btn .ic { width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; background: var(--wash-strong); flex: none; transition: background-color .2s ease, color .2s ease; }
-.tile-btn[aria-pressed="true"] .ic { background: var(--blue); color: #fff; }
+.tile-btn[aria-pressed="true"] .ic { background: var(--accent, var(--blue)); color: var(--on-accent, #fff); }
 #ccFocus[aria-pressed="true"] .ic { background: #5e5ce6; }
 .tile-k { display: block; font-weight: 700; font-size: 13px; }
 .tile-v { display: block; font-size: 12px; color: var(--ink-soft); }
@@ -274,9 +330,9 @@ button { cursor: pointer; }
 .set-side h2 { margin: 4px 10px 14px; font-size: 21px; font-weight: 700; letter-spacing: -0.02em; }
 .set-nav { min-height: 34px; border: 0; border-radius: 10px; background: transparent; text-align: left; padding: 0 8px; font-weight: 600; display: flex; align-items: center; gap: 10px; transition: background-color .15s ease; }
 .set-nav:hover { background: var(--wash); }
-.set-nav[aria-selected="true"] { background: var(--blue); color: #fff; }
+.set-nav[aria-selected="true"] { background: var(--accent, var(--blue)); color: var(--on-accent, #fff); }
 .set-nav .dot { width: 14px; height: 14px; border-radius: 5px; flex: none; box-shadow: inset 0 1px 1px rgba(255, 255, 255, .5); }
-.set-main { overflow-y: auto; padding: 22px 24px 28px; scrollbar-width: thin; }
+.set-main { overflow-y: auto; padding: 22px 24px 28px; }
 .set-main h3 { margin: 0 46px 14px 0; font-size: 24px; font-weight: 700; letter-spacing: -0.02em; }
 .group { background: var(--wash); border-radius: 16px; overflow: hidden; margin-bottom: 8px; }
 .group-label { font-size: 12px; font-weight: 700; color: var(--ink-faint); margin: 16px 6px 6px; }
@@ -298,7 +354,7 @@ select.field { appearance: auto; padding: 0 10px; }
 .wall-opt { border: 0; padding: 0; background: transparent; text-align: center; font-size: 12px; font-weight: 600; }
 .wall-opt canvas { width: 100%; aspect-ratio: 16 / 10; border-radius: 10px; display: block; margin-bottom: 6px; box-shadow: 0 0 0 2px transparent; transition: box-shadow .18s ease, transform .2s var(--ease); }
 .wall-opt:hover canvas { transform: scale(1.04); }
-.wall-opt[aria-pressed="true"] canvas { box-shadow: 0 0 0 2.5px var(--blue); }
+.wall-opt[aria-pressed="true"] canvas { box-shadow: 0 0 0 2.5px var(--accent, var(--blue)); }
 .close-x { position: absolute; top: 16px; right: 16px; z-index: 4; background: var(--wash); }
 .backup { height: 110px; font-family: ui-monospace, Consolas, monospace; font-size: 11.5px; margin-bottom: 12px; }
 .row.stack { flex-wrap: wrap; }
@@ -312,12 +368,13 @@ select.field { appearance: auto; padding: 0 10px; }
 .chip { height: 30px; padding: 0 12px; border: 0; border-radius: 15px; background: var(--wash); font-weight: 600; font-size: 12.5px; color: var(--ink-soft); transition: background-color .18s ease, color .18s ease, transform .18s var(--ease); }
 .chip:hover { background: var(--wash-strong); color: var(--ink); }
 .chip:active { transform: scale(.95); }
-.chip[aria-checked="true"], .chip[aria-pressed="true"] { background: var(--blue); color: #fff; }
+.chip[aria-checked="true"], .chip[aria-pressed="true"] { background: var(--accent, var(--blue)); color: var(--on-accent, #fff); }
 .chip.off:not([aria-checked="true"]) { opacity: .6; }
 .chip.icon { width: 36px; padding: 0; display: grid; place-items: center; }
 .chip.font-rounded { font-family: ui-rounded, "SF Pro Rounded", "Nunito", "Arial Rounded MT Bold", var(--font); }
 .chip.font-serif { font-family: "New York", "Playfair Display", Georgia, serif; }
 .chip.font-mono { font-family: ui-monospace, "SF Mono", "JetBrains Mono", Consolas, monospace; }
+.chip.font-pixel { font-family: "VT323", "Courier New", monospace; font-size: 15px; }
 .chip.font-condensed { font-family: "Oswald", "Bahnschrift Condensed", "Arial Narrow", var(--font); }
 .chips .grad { width: 54px; height: 32px; border: 0; border-radius: 10px; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .25); }
 .chips .grad:hover { transform: scale(1.06); }
@@ -326,7 +383,7 @@ select.field { appearance: auto; padding: 0 10px; }
 .swatches { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .swatch { width: 28px; height: 28px; padding: 0; border: 0; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(127, 127, 127, .45); display: grid; place-items: center; font-size: 11px; font-weight: 800; transition: transform .18s var(--ease), box-shadow .18s ease; }
 .swatch:hover { transform: scale(1.1); }
-.swatch[aria-checked="true"] { box-shadow: 0 0 0 2px var(--page), 0 0 0 4px var(--blue); }
+.swatch[aria-checked="true"] { box-shadow: 0 0 0 2px var(--page), 0 0 0 4px var(--accent, var(--blue)); }
 .swatch.auto { background: conic-gradient(#ff375f, #ffd60a, #30d158, #64d2ff, #bf5af2, #ff375f); color: #fff; text-shadow: 0 1px 2px rgba(0, 0, 0, .5); }
 .swatch.custom { appearance: none; -webkit-appearance: none; cursor: pointer; background: none; }
 .swatch.custom::-webkit-color-swatch-wrapper { padding: 0; }
@@ -347,6 +404,63 @@ select.field { appearance: auto; padding: 0 10px; }
   .island.expanded { width: calc(100vw - 24px); }
   .cc { left: 12px; right: 12px; width: auto; }
 }
+
+/* Settings › Themes: preset tiles with a mini preview of each look */
+.looks { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; margin-bottom: 8px; }
+.look-tile { display: grid; gap: 2px; padding: 0 0 10px; border: 0; border-radius: 16px; background: var(--wash); text-align: left; overflow: hidden; transition: transform .2s var(--ease), box-shadow .2s ease; }
+.look-tile:hover { transform: translateY(-2px); }
+.look-tile[aria-pressed="true"] { box-shadow: 0 0 0 2.5px var(--accent, var(--blue)); }
+.look-tile b { padding: 6px 12px 0; font-size: 13.5px; }
+.look-tile small { padding: 0 12px; font-size: 11.5px; color: var(--ink-faint); }
+.look-pv { position: relative; height: 104px; overflow: hidden; background-size: cover; }
+.look-pv canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.lp-clock { position: absolute; top: 14px; left: 50%; translate: -50% 0; font: 800 22px/1 var(--font-display); color: #fff; text-shadow: 0 1px 6px rgba(0, 0, 0, .3); }
+.lp-cards { position: absolute; inset: 0; pointer-events: none; }
+.lp-card { position: absolute; width: 22%; height: 26%; border-radius: 6px; background: rgba(255, 255, 255, .28); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .45), 0 3px 8px rgba(0, 0, 0, .18); backdrop-filter: blur(4px); }
+/* card positions follow the preset's layout */
+.look-pv .lp-card:nth-child(1) { left: 5%; top: 46%; } .look-pv .lp-card:nth-child(2) { right: 5%; top: 18%; } .look-pv .lp-card:nth-child(3) { right: 5%; top: 50%; }
+.look-pv[data-layout="left"] .lp-card:nth-child(1) { left: 5%; top: 8%; } .look-pv[data-layout="left"] .lp-card:nth-child(2) { left: 5%; right: auto; top: 38%; } .look-pv[data-layout="left"] .lp-card:nth-child(3) { left: 5%; right: auto; top: 68%; }
+.look-pv[data-layout="left"] .lp-clock { left: 62%; top: 40%; }
+.look-pv[data-layout="right"] .lp-card:nth-child(1) { left: auto; right: 5%; top: 8%; } .look-pv[data-layout="right"] .lp-card:nth-child(2) { top: 38%; } .look-pv[data-layout="right"] .lp-card:nth-child(3) { top: 68%; }
+.look-pv[data-layout="right"] .lp-clock { left: 38%; top: 40%; }
+.look-pv[data-layout="bento"] .lp-card:nth-child(1) { left: 14%; top: 50%; } .look-pv[data-layout="bento"] .lp-card:nth-child(2) { left: 39%; right: auto; top: 50%; } .look-pv[data-layout="bento"] .lp-card:nth-child(3) { left: 64%; right: auto; top: 50%; }
+.look-pv[data-layout="row"] .lp-card { top: auto !important; bottom: 7%; } .look-pv[data-layout="row"] .lp-card:nth-child(1) { left: 5%; } .look-pv[data-layout="row"] .lp-card:nth-child(2) { left: 30%; right: auto; } .look-pv[data-layout="row"] .lp-card:nth-child(3) { left: 55%; right: auto; }
+.look-pv[data-layout="row"] .lp-clock { left: 8%; top: 12%; translate: 0 0; }
+/* mini skins */
+.look-pv[data-skin="brutal"] .lp-card { background: #fffdf2; border-radius: 0; box-shadow: 0 0 0 2px #111, 3px 3px 0 2px #111; backdrop-filter: none; }
+.look-pv[data-skin="neon"] .lp-card { background: rgba(5, 6, 18, .85); border-radius: 3px; box-shadow: 0 0 0 1px var(--accent, #00e5ff), 0 0 10px var(--accent, #00e5ff); backdrop-filter: none; }
+.look-pv[data-skin="paper"] .lp-card { background: #fbf6e8; border-radius: 2px; box-shadow: 0 4px 8px rgba(60, 40, 10, .3); rotate: -3deg; backdrop-filter: none; }
+.look-pv[data-skin="paper"] .lp-card:nth-child(2) { background: #fff4b8; rotate: 3deg; }
+.look-pv[data-skin="retro"] .lp-card { background: #c3c3c3; border-radius: 0; border-top: 5px solid #000080; box-shadow: inset 1px 1px 0 #fff, inset -1px -1px 0 #404040; backdrop-filter: none; }
+.look-pv[data-skin="clay"] .lp-card { background: linear-gradient(145deg, #f7f4ff, #e2def5); border-radius: 12px; box-shadow: 4px 4px 8px rgba(70, 60, 130, .35), -2px -2px 5px rgba(255, 255, 255, .8); backdrop-filter: none; }
+.look-pv[data-skin="bare"] .lp-card { background: none; box-shadow: none; border-top: 2px solid rgba(255, 255, 255, .8); height: 4%; backdrop-filter: none; }
+
+/* Settings › Wallpaper: media library and gradient tiles */
+.media-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; padding: 12px; }
+.media-tile { position: relative; aspect-ratio: 16 / 10; border: 0; padding: 0; border-radius: 12px; overflow: hidden; background: var(--wash-strong); cursor: pointer; box-shadow: 0 0 0 2px transparent; transition: box-shadow .18s ease, transform .2s var(--ease); }
+.media-tile:hover { transform: scale(1.03); }
+.media-tile[aria-checked="true"] { box-shadow: 0 0 0 2.5px var(--accent, var(--blue)); }
+.media-tile img, .media-tile video { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
+.media-badge { position: absolute; left: 6px; bottom: 6px; padding: 1px 6px; border-radius: 6px; background: rgba(0, 0, 0, .55); color: #fff; font-size: 10.5px; font-weight: 700; }
+.media-badge:empty { display: none; }
+.media-del { position: absolute; top: 5px; right: 5px; width: 22px; height: 22px; border: 0; border-radius: 50%; background: rgba(0, 0, 0, .55); color: #fff; font-size: 11px; opacity: 0; transition: opacity .15s ease; }
+.media-tile:hover .media-del, .media-del:focus-visible { opacity: 1; }
+.media-tile.add { display: grid; place-content: center; gap: 2px; color: var(--ink-soft); font-weight: 700; text-align: center; }
+.media-tile.add span { font-size: 26px; line-height: 1; }
+.media-tile.add small { font-size: 11.5px; }
+.grad-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 10px; padding: 12px; }
+.grad-tile { aspect-ratio: 16 / 10; border: 0; border-radius: 12px; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .25); transition: transform .2s var(--ease), box-shadow .18s ease; }
+.grad-tile:hover { transform: scale(1.05); }
+.grad-tile[aria-pressed="true"] { box-shadow: 0 0 0 2.5px var(--accent, var(--blue)); }
+
+/* Settings › Clock: 3×3 position grid for the desktop clock */
+.spots { display: grid; grid-template-columns: repeat(3, 34px) auto; grid-template-rows: repeat(3, 22px); gap: 5px; align-items: stretch; }
+.spot { border: 0; padding: 0; border-radius: 6px; background: var(--wash-strong); }
+.spot:hover { background: rgba(255, 255, 255, .4); }
+.spot[aria-pressed="true"] { background: var(--accent, var(--blue)); }
+.spot.auto { grid-column: 4; grid-row: 1 / 4; margin-left: 10px; padding: 0 14px; border-radius: 12px; font-weight: 600; font-size: 12.5px; }
+.spot.auto[aria-pressed="true"] { color: var(--on-accent, #fff); }
+.btn-row.tab-reset { margin-top: 22px; justify-content: flex-end; }
 
 .widget { width: 300px; cursor: default; }
 .widget > .pane { padding: var(--card-pad, 16px) calc(var(--card-pad, 16px) + 2px); text-shadow: var(--lift); zoom: var(--card-zoom, 1); }
@@ -391,13 +505,13 @@ select.field { appearance: auto; padding: 0 10px; }
 
 .cal-head { display: flex; align-items: center; gap: 2px; margin-bottom: 6px; }
 .cal-month { flex: 1; font-size: 15px; font-weight: 700; }
-.cal-month b { color: var(--red); }
+.cal-month b { color: var(--accent, var(--red)); }
 .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-size: 12.5px; font-weight: 600; row-gap: 2px; }
 .cal-grid .dow { font-size: 10.5px; color: var(--ink-faint); font-weight: 700; padding-bottom: 4px; }
 .cal-grid .d { height: 30px; display: grid; place-items: center; border-radius: 50%; }
 .cal-grid .d.out { color: var(--ink-faint); opacity: .6; }
 .cal-grid .d.wknd { color: var(--ink-soft); }
-.cal-grid .d.today { background: var(--red); color: #fff; text-shadow: none; }
+.cal-grid .d.today { background: var(--accent, var(--red)); color: var(--on-accent, #fff); text-shadow: none; }
 
 .wc-row { display: grid; grid-template-columns: 1fr auto; align-items: center; padding: 7px 0; border-top: 0.5px solid var(--wash-strong); }
 .wc-row:first-child { border-top: 0; }
@@ -405,18 +519,26 @@ select.field { appearance: auto; padding: 0 10px; }
 .wc-off { font-size: 12px; color: var(--ink-faint); font-weight: 600; }
 .wc-time { font-family: var(--font-display); font-size: 24px; font-weight: 500; letter-spacing: -0.03em; }
 
-.rm-list { list-style: none; margin: 0; padding: 0; max-height: 220px; overflow: auto; scrollbar-width: none; }
+.rm-list { list-style: none; margin: 0; padding: 0; max-height: 220px; overflow: auto; }
 .rm-item { display: grid; grid-template-columns: 24px 1fr auto; gap: 10px; align-items: center; padding: 6px 0; border-bottom: 0.5px solid var(--wash-strong); }
 .rm-check { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--ink-faint); background: transparent; display: grid; place-items: center; padding: 0; transition: background-color .2s ease, border-color .2s ease, transform .25s var(--spring); }
 .rm-check:active { transform: scale(.85); }
-.rm-item.done .rm-check { background: var(--blue); border-color: var(--blue); }
+.rm-item.done .rm-check { background: var(--accent, var(--blue)); border-color: var(--accent, var(--blue)); }
 .rm-item.done .rm-text { color: var(--ink-faint); text-decoration: line-through; }
 .rm-text { font-size: 14px; font-weight: 500; overflow-wrap: anywhere; }
 .rm-del { opacity: 0; width: 26px; height: 26px; }
 .rm-item:hover .rm-del, .rm-del:focus-visible { opacity: 1; }
 .rm-add { display: flex; gap: 8px; margin-top: 10px; }
-.we-hint { display: none; margin: 8px 0 0; font-size: 12px; }
-.in-we .rm-add { display: none; } .in-we .we-hint { display: block; }
+/* on-screen keyboard (Wallpaper Engine passes no key presses) */
+.kb { left: 50%; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); translate: -50% 0; width: min(800px, calc(100vw - 24px)); z-index: 90; border-radius: calc(var(--lg-radius) + 4px); }
+.kb > .pane { display: grid; gap: 7px; padding: 10px; }
+.kb-row { display: flex; gap: 6px; justify-content: center; }
+.kb-key { flex: 1; max-width: 66px; height: 46px; border: 0; border-radius: 12px; background: var(--wash-strong); font-size: 18px; font-weight: 600; transition: background-color .12s ease, transform .12s var(--ease); }
+.kb-key:hover { background: rgba(255, 255, 255, .34); }
+.kb-key:active { transform: scale(.92); background: var(--wash); }
+.kb-key.act { background: var(--wash); font-size: 14px; max-width: 96px; flex: 1.4; }
+.kb-key.k-space { flex: 5; max-width: none; }
+.kb-key.k-done, .kb-key.on { background: var(--accent, var(--blue)); color: var(--on-accent, #fff); }
 
 .notes { width: 100%; height: 150px; resize: none; border: 0; border-radius: 14px; padding: 10px 12px; background: var(--wash); outline: 0; line-height: 1.45; text-shadow: none; }
 .notes:focus { box-shadow: 0 0 0 2px var(--ink-soft); }
@@ -442,7 +564,7 @@ select.field { appearance: auto; padding: 0 10px; }
 .mu-ctrl .mu-mode { width: 36px; height: 36px; color: var(--ink-faint); position: relative; }
 .mu-ctrl .mu-mode[aria-pressed="true"] { color: var(--ink); background: var(--wash-strong); }
 .mu-one { position: absolute; right: 4px; bottom: 4px; font-size: 9px; font-weight: 800; width: 12px; height: 12px; border-radius: 50%; display: grid; place-items: center; background: var(--ink); color: var(--page); }
-.mu-list { list-style: none; margin: 10px 0 0; padding: 0; max-height: 200px; overflow-y: auto; scrollbar-width: thin; border-top: 0.5px solid var(--wash-strong); }
+.mu-list { list-style: none; margin: 10px 0 0; padding: 0; max-height: 200px; overflow-y: auto; border-top: 0.5px solid var(--wash-strong); }
 .mu-li { width: 100%; display: grid; grid-template-columns: 22px 1fr auto; gap: 8px; align-items: center; padding: 7px 4px; border: 0; border-radius: 10px; background: none; text-align: left; font-size: 13px; }
 .mu-li:hover { background: var(--wash); }
 .mu-li.on { font-weight: 700; }
@@ -454,6 +576,108 @@ select.field { appearance: auto; padding: 0 10px; }
 .widget[data-w="visualizer"] .pane { padding: 12px; }
 #vizCard { display: block; width: 100%; height: 150px; }
 .notes { color: var(--ink); }
+
+/* Skins: surface styles other than Liquid Glass. Each one swaps the glass
+ * layers for its own surface (--sk-*) and its own ink and type. Layout,
+ * accent and wallpaper are independent of the skin. */
+:root:not([data-skin="glass"]) .lg-warp, :root:not([data-skin="glass"]) .lg-sheen, :root:not([data-skin="glass"]) .lg-rim { display: none; }
+:root:not([data-skin="glass"]) :is(.lg-panel, .lg-bar, .lg-menu, .lg-control) { background: var(--sk-bg); border: var(--sk-border); box-shadow: var(--sk-shadow); border-radius: var(--sk-radius); }
+:root:not([data-skin="glass"]) .tile { border-radius: var(--sk-radius-sm, var(--sk-radius)); }
+:root:not([data-skin="glass"]) #hero:not(.plate) { background: none; border: 0; box-shadow: none; }
+:root:not([data-skin="glass"]) .seg-drop { background: var(--sk-sel, var(--wash-strong)); }
+:root:not([data-skin="glass"]) .slider.active .sl-knob { opacity: 1; transform: none; }
+:root:not([data-skin="glass"]) .switch.pressing .sw-knob { background: #fff; }
+:root:not([data-skin="glass"]) .cc .tile { box-shadow: none; }
+
+/* ---------- Brutalist: flat, loud, square, hard shadows ---------- */
+:root[data-skin="brutal"] {
+  --sk-bg: #fffdf2; --sk-border: 3px solid #111; --sk-shadow: 7px 7px 0 #111; --sk-radius: 0px; --sk-sel: #111;
+  --ink: #111; --ink-soft: rgba(17, 17, 17, .78); --ink-faint: rgba(17, 17, 17, .55);
+  --wash: rgba(17, 17, 17, .07); --wash-strong: rgba(17, 17, 17, .14); --track-bg: rgba(17, 17, 17, .18); --lift: none; --solid: #fffdf2;
+  --font: "JetBrains Mono", ui-monospace, Consolas, monospace; --font-display: "JetBrains Mono", ui-monospace, Consolas, monospace;
+  color-scheme: light;
+}
+:root[data-skin="brutal"] .seg button[aria-checked="true"] { color: #fff; }
+:root[data-skin="brutal"] :is(.pill, .chip, .field, .seg, .seg button, .seg-drop, .switch, .sw-knob, .icon-btn, .group, .app, .rm-check, .kb-key, .notes, .sys-cell, .mu-art canvas, .mu-art img, .cal-grid .d, .set-nav, .menu-item, .tile-btn .ic, .wall-opt canvas, .clock-preview, .swatch) { border-radius: 0 !important; }
+:root[data-skin="brutal"] :is(.pill, .chip, .kb-key) { border: 2px solid #111; box-shadow: 3px 3px 0 #111; }
+:root[data-skin="brutal"] :is(.pill, .chip, .kb-key):active { translate: 2px 2px; box-shadow: 1px 1px 0 #111; }
+:root[data-skin="brutal"] .w-title, :root[data-skin="brutal"] .group-label { text-transform: uppercase; letter-spacing: .08em; color: #111; }
+:root[data-skin="brutal"] .switch { border: 2px solid #111; }
+:root[data-skin="brutal"] .widget:hover { translate: -2px -2px; box-shadow: 9px 9px 0 #111; }
+:root[data-skin="brutal"] .widget { transition: translate .15s ease, box-shadow .15s ease; }
+
+/* ---------- Neon: dark terminal panels with glowing edges ---------- */
+:root[data-skin="neon"] {
+  --neon: var(--accent, #00e5ff);
+  --sk-bg: rgba(5, 6, 18, .86); --sk-border: 1px solid var(--neon); --sk-radius: 6px; --sk-sel: color-mix(in srgb, var(--neon) 35%, transparent);
+  --sk-shadow: 0 0 22px color-mix(in srgb, var(--neon) 45%, transparent), inset 0 0 22px color-mix(in srgb, var(--neon) 14%, transparent);
+  --ink: #dffbff; --ink-soft: rgba(223, 251, 255, .75); --ink-faint: rgba(223, 251, 255, .5);
+  --wash: rgba(223, 251, 255, .07); --wash-strong: rgba(223, 251, 255, .16); --track-bg: rgba(223, 251, 255, .16); --lift: none; --solid: #05060f;
+  --font: "JetBrains Mono", ui-monospace, Consolas, monospace; --font-display: "JetBrains Mono", ui-monospace, Consolas, monospace;
+}
+:root[data-skin="neon"] :is(.w-title, .cf-time, .cf-h, .cf-m, .wx-temp, .wc-time, .cal-month, .isl-time) { text-shadow: 0 0 10px color-mix(in srgb, var(--neon) 80%, transparent); }
+:root[data-skin="neon"] .w-title { color: var(--neon); text-transform: uppercase; letter-spacing: .12em; }
+:root[data-skin="neon"] .widget::after { content: ""; position: absolute; inset: 0; z-index: 4; pointer-events: none; border-radius: inherit; background: repeating-linear-gradient(0deg, rgba(255, 255, 255, .035) 0 1px, transparent 1px 3px); }
+:root[data-skin="neon"] :is(.pill, .chip, .field, .kb-key) { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--neon) 50%, transparent); }
+
+/* ---------- Paper: sticky notes taped to the desk ---------- */
+:root[data-skin="paper"] {
+  --sk-bg: #fbf6e8; --sk-border: 0; --sk-radius: 3px; --sk-sel: rgba(58, 47, 37, .14);
+  --sk-shadow: 0 1px 1px rgba(60, 40, 10, .08), 0 12px 26px rgba(60, 40, 10, .22);
+  --ink: #3a2f25; --ink-soft: rgba(58, 47, 37, .75); --ink-faint: rgba(58, 47, 37, .5);
+  --wash: rgba(58, 47, 37, .07); --wash-strong: rgba(58, 47, 37, .13); --track-bg: rgba(58, 47, 37, .16); --lift: none; --solid: #fbf6e8;
+  --font: Georgia, "Iowan Old Style", "Times New Roman", serif; --font-display: "Playfair Display", Georgia, serif;
+  color-scheme: light;
+}
+:root[data-skin="paper"] .widget:nth-of-type(odd) { rotate: -1.3deg; }
+:root[data-skin="paper"] .widget:nth-of-type(even) { rotate: 1deg; }
+:root[data-skin="paper"] .widget:nth-of-type(3n) { --sk-bg: #fff4b8; }
+:root[data-skin="paper"] .widget:nth-of-type(4n) { --sk-bg: #e3f1ff; }
+:root[data-skin="paper"] .widget:nth-of-type(5n) { --sk-bg: #ffe1e8; }
+:root[data-skin="paper"] .widget::before { content: ""; position: absolute; z-index: 5; top: -11px; left: 50%; width: 88px; height: 22px; translate: -50% 0; rotate: -3deg; background: rgba(255, 236, 170, .78); box-shadow: 0 1px 2px rgba(0, 0, 0, .12); pointer-events: none; }
+:root[data-skin="paper"] .widget.dragging { rotate: 0deg; }
+
+/* ---------- Retro OS: beige-grey bevels and blue title bars ---------- */
+:root[data-skin="retro"] {
+  --sk-bg: #c3c3c3; --sk-border: 2px solid; --sk-radius: 0px; --sk-sel: #000080; --sk-shadow: 1px 1px 0 #000;
+  --ink: #000; --ink-soft: rgba(0, 0, 0, .78); --ink-faint: rgba(0, 0, 0, .55);
+  --wash: rgba(0, 0, 0, .06); --wash-strong: rgba(255, 255, 255, .55); --track-bg: #808080; --lift: none; --solid: #c3c3c3;
+  --font: Tahoma, "MS Sans Serif", "Segoe UI", sans-serif; --font-display: "Arial Black", Tahoma, sans-serif;
+  color-scheme: light;
+}
+:root[data-skin="retro"] :is(.lg-panel, .lg-bar, .lg-menu, .lg-control) { border-color: #fff #404040 #404040 #fff; }
+:root[data-skin="retro"] .widget::before { content: attr(aria-label); display: block; margin: 2px 2px 0; padding: 3px 8px; background: linear-gradient(90deg, #000080, #1084d0); color: #fff; font: 700 12px Tahoma, sans-serif; position: relative; z-index: 4; }
+:root[data-skin="retro"] .widget .w-title { display: none; }
+:root[data-skin="retro"] :is(.pill, .chip, .kb-key, .icon-btn.close-x, .app) { background: #c3c3c3; color: #000; border: 2px solid; border-color: #fff #404040 #404040 #fff; border-radius: 0; box-shadow: none; }
+:root[data-skin="retro"] :is(.pill, .chip, .kb-key):active, :root[data-skin="retro"] .chip[aria-checked="true"], :root[data-skin="retro"] .chip[aria-pressed="true"] { border-color: #404040 #fff #fff #404040; background: #b0b0b0; color: #000; }
+:root[data-skin="retro"] :is(.field, .notes, .group, .clock-preview) { background: #fff; border: 2px solid; border-color: #404040 #fff #fff #404040; border-radius: 0; }
+:root[data-skin="retro"] :is(.seg, .seg button, .seg-drop, .switch, .sw-knob, .icon-btn, .set-nav, .menu-item, .cal-grid .d, .sys-cell, .rm-check, .tile-btn .ic, .swatch, .wall-opt canvas) { border-radius: 0 !important; }
+:root[data-skin="retro"] .seg button[aria-checked="true"], :root[data-skin="retro"] .set-nav[aria-selected="true"] { color: #fff; }
+:root[data-skin="retro"] .set-nav[aria-selected="true"], :root[data-skin="retro"] .menu-item:hover { background: #000080; }
+
+/* ---------- Clay: soft, puffy, pastel ---------- */
+:root[data-skin="clay"] {
+  --sk-bg: linear-gradient(145deg, #f7f4ff, #e7e4f6); --sk-border: 0; --sk-radius: 34px; --sk-radius-sm: 22px; --sk-sel: #fff;
+  --sk-shadow: 14px 14px 30px rgba(70, 60, 130, .3), -8px -8px 22px rgba(255, 255, 255, .7), inset 3px 3px 6px rgba(255, 255, 255, .9), inset -4px -4px 8px rgba(70, 60, 130, .16);
+  --ink: #2d2a4a; --ink-soft: rgba(45, 42, 74, .72); --ink-faint: rgba(45, 42, 74, .5);
+  --wash: rgba(70, 60, 130, .07); --wash-strong: rgba(255, 255, 255, .8); --track-bg: rgba(70, 60, 130, .14); --lift: none; --solid: #efedf9;
+  --font: "Nunito", ui-rounded, "Arial Rounded MT Bold", sans-serif; --font-display: "Nunito", ui-rounded, sans-serif;
+  color-scheme: light;
+}
+:root[data-skin="clay"] :is(.pill, .chip, .kb-key, .field) { box-shadow: 4px 4px 10px rgba(70, 60, 130, .18), -3px -3px 8px rgba(255, 255, 255, .8); }
+:root[data-skin="clay"] .switch { box-shadow: inset 2px 2px 5px rgba(70, 60, 130, .25); }
+
+/* ---------- Bare: no surfaces at all, just type on the wallpaper ---------- */
+:root[data-skin="bare"] { --sk-bg: none; --sk-border: 0; --sk-shadow: none; --sk-radius: 0px; --lift: 0 1px 12px rgba(0, 0, 0, .45); }
+:root[data-skin="bare"] .widget > .pane { text-shadow: 0 1px 12px rgba(0, 0, 0, .45), 0 1px 2px rgba(0, 0, 0, .3); }
+:root[data-skin="bare"] :is(#settings, .menu, #cc, .kb, .dock, .island) { --sk-bg: var(--solid); --sk-radius: 22px; --sk-shadow: 0 18px 50px rgba(0, 0, 0, .35); }
+:root[data-skin="bare"] .widget:hover { --sk-bg: rgba(0, 0, 0, .12); }
+
+/* UI font picked in Themes overrides the skin's */
+:root[data-uifont="rounded"] { --font: "Nunito", ui-rounded, sans-serif; --font-display: "Nunito", ui-rounded, sans-serif; }
+:root[data-uifont="serif"] { --font: Georgia, "Times New Roman", serif; --font-display: "Playfair Display", Georgia, serif; }
+:root[data-uifont="mono"] { --font: "JetBrains Mono", ui-monospace, Consolas, monospace; --font-display: "JetBrains Mono", ui-monospace, monospace; }
+:root[data-uifont="condensed"] { --font: "Oswald", "Bahnschrift Condensed", "Arial Narrow", sans-serif; --font-display: "Oswald", "Bahnschrift Condensed", sans-serif; }
 
 </style>
 </head>
@@ -724,8 +948,8 @@ select.field { appearance: auto; padding: 0 10px; }
         cards: {},
         // id -> per-card overrides {blur, sat, bright, tint, radius, rim, shine, refraction, width}
         glass: { blur: 14, sat: 180, bright: 1, tint: 0.06, radius: 26, rim: 0.45, shine: 0.5, refraction: 1, quality: "balanced", react: "near", reactRadius: 220, shadow: 0.24 },
-        wallpaper: { kind: "theme", theme: "dusk", motion: true, speed: 1, fps: 60, colorA: "#1f2a6b", colorB: "#e0707a", fit: "cover", slideEvery: 60, dim: 0, audioReactive: true },
-        island: { mode: "island", expandOnHover: true, showTime: true, showWeather: true, seconds: false },
+        wallpaper: { kind: "theme", theme: "dusk", motion: true, speed: 1, fps: 60, colorA: "#1f2a6b", colorB: "#e0707a", gradStyle: "linear", gradAngle: 160, gradFlow: false, fit: "cover", slideEvery: 60, dim: 0, audioReactive: true, media: "" },
+        island: { mode: "island", expandOnHover: true, showTime: true, showWeather: true, seconds: false, battery: "percent", showNetwork: true, showNowPlaying: true, showCC: true, showMenu: true },
         dock: { mode: "hidden", shortcuts: [
           { id: "s1", name: "Settings", kind: "action", target: "settings", icon: "gear" },
           { id: "s2", name: "Edit layout", kind: "action", target: "edit", icon: "grid" },
@@ -743,17 +967,31 @@ select.field { appearance: auto; padding: 0 10px; }
           leadingZero: false,
           ampm: true,
           blink: false,
-          dateFormat: "long"
+          dateFormat: "long",
+          align: "left"
         },
         hero: { show: true, style: "digital", size: 1, date: true, weight: "auto", seconds: false, font: "system", numerals: "four", color: "auto", opacity: 1, shadow: 0.25, plate: false, align: "center" },
         calendar: { weekStart: 0 },
         music: { source: "auto", repeat: "all", shuffle: false, continuous: true, volume: 0.8, order: [] },
         viz: { card: true, island: true, edge: false, style: "bars", color: "ink", sensitivity: 1, bars: 48, edgeHeight: 90 },
         style: "clear",
+        look: "liquid",
+        // last preset applied in Settings › Themes
+        skin: "glass",
+        // surface style: glass, brutal, neon, paper, retro, clay
+        layoutMode: "columns",
+        // where cards flow: columns, left, right, bento, row
+        lockLayout: false,
+        accent: "auto",
+        uiFont: "system",
+        keyboard: "auto",
+        // on-screen keyboard: auto (Wallpaper Engine), on, off
         reduce: false,
         focusMode: false,
         city: "London",
         unit: "c",
+        geo: null,
+        // geo: {name, latitude, longitude, label} when picked from search
         cities: ["Europe/London", "America/New_York", "Asia/Tokyo"],
         weLast: {},
         // last values seen from Wallpaper Engine's properties
@@ -810,54 +1048,6 @@ select.field { appearance: auto; padding: 0 10px; }
         all: () => tx("readonly", (s) => s.getAll()).catch(() => []),
         del: (id) => tx("readwrite", (s) => s.delete(id)).catch(() => null)
       };
-    }
-  });
-
-  // src/js/wallpaper/media.js
-  var media_exports = {};
-  __export(media_exports, {
-    addSlides: () => addSlides,
-    clearSlides: () => clearSlides,
-    loadWallpaperMedia: () => loadWallpaperMedia,
-    setMainFile: () => setMainFile,
-    wpMedia: () => wpMedia
-  });
-  async function loadWallpaperMedia() {
-    const all = await files.all();
-    const main = all.find((r) => r.id === "wp:main");
-    if (main) {
-      wpMedia.main = url(main);
-      wpMedia.mainType = main.mime || "";
-    }
-    wpMedia.slides = all.filter((r) => r.id.startsWith("wp:slide:")).sort((a, b) => a.added - b.added).map(url);
-    bus.emit("wallpaper:media");
-  }
-  async function setMainFile(f) {
-    await files.put({ id: "wp:main", type: "wallpaper", mime: f.type, name: f.name, blob: f, added: Date.now() });
-    urls.delete("wp:main");
-    await loadWallpaperMedia();
-    return f.type.startsWith("video/") ? "video" : f.type === "image/gif" ? "gif" : "image";
-  }
-  async function addSlides(list2) {
-    for (const f of list2) if (f.type.startsWith("image/")) await files.put({ id: "wp:slide:" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), type: "wallpaper", mime: f.type, name: f.name, blob: f, added: Date.now() });
-    await loadWallpaperMedia();
-  }
-  async function clearSlides() {
-    for (const r of await files.all()) if (r.id.startsWith("wp:slide:")) await files.del(r.id);
-    urls.clear();
-    await loadWallpaperMedia();
-  }
-  var urls, url, wpMedia;
-  var init_media = __esm({
-    "src/js/wallpaper/media.js"() {
-      init_idb();
-      init_bus();
-      urls = /* @__PURE__ */ new Map();
-      url = (rec) => {
-        if (!urls.has(rec.id)) urls.set(rec.id, URL.createObjectURL(rec.blob));
-        return urls.get(rec.id);
-      };
-      wpMedia = { main: null, mainType: "", slides: [], we: { image: "", video: "", folder: [] } };
     }
   });
 
@@ -1429,7 +1619,7 @@ select.field { appearance: auto; padding: 0 10px; }
     player: () => player,
     removeTrack: () => removeTrack,
     setIncludeBuiltin: () => setIncludeBuiltin,
-    setWEFolder: () => setWEFolder
+    setWEFolder: () => setWEFolder2
   });
   function wireAudio() {
     engine.ensure();
@@ -1501,7 +1691,7 @@ select.field { appearance: auto; padding: 0 10px; }
     bus.emit("playlist");
     emit2();
   }
-  function setWEFolder(paths) {
+  function setWEFolder2(paths) {
     weFolder = paths.filter((p) => /\.(mp3|m4a|aac|wav|ogg|flac|opus)$/i.test(p)).map((p) => {
       const name = p.split(/[\\/]/).pop();
       return { id: "we:" + p, kind: "file", ...split(name), src: "file:///" + p };
@@ -1960,17 +2150,25 @@ select.field { appearance: auto; padding: 0 10px; }
 
   // src/js/wallpaper/themes.js
   var THEMES = {
-    dusk: { name: "Dusk", glass: "dark", bg: "#141a45", bands: ["#1f2a6b", "#34389a", "#5b45b0", "#9a55a8", "#e0707a", "#ffad86"], sun: "#ffcf9e", amp: 0.07, tilt: -0.05, hero: "#ffffff" },
-    lagoon: { name: "Lagoon", glass: "light", bg: "#eaf6f3", bands: ["#cdeee8", "#a3dfd9", "#6fc8c6", "#3aa9b0", "#178795", "#0c5f70"], sun: null, amp: 0.05, tilt: 0.04, hero: "#0c3f4a" },
-    ember: { name: "Ember", glass: "dark", bg: "#22081a", bands: ["#43102b", "#6f1736", "#a32437", "#d24d2f", "#f08a35", "#fbc65a"], sun: "#ffd27a", amp: 0.09, tilt: 0.03, hero: "#ffffff" },
-    mist: { name: "Mist", glass: "light", bg: "#f4f2f8", bands: ["#e6e2f2", "#d4cdea", "#bdb3df", "#a397cf", "#8679bd", "#6b5ea6"], sun: null, amp: 0.06, tilt: -0.03, hero: "#2c2452" },
-    aurora: { name: "Aurora", glass: "dark", bg: "#04121c", bands: ["#062a3a", "#0a4150", "#0e5d63", "#147a70", "#1f9a7c", "#33b388"], sun: null, amp: 0.11, tilt: 0.06, hero: "#e9fff4" },
-    image: { name: "Your image", glass: "dark", bg: "#111", bands: [], sun: null, amp: 0, tilt: 0, hero: "#ffffff" }
+    dusk: { name: "Dusk", style: "waves", glass: "dark", bg: "#141a45", bands: ["#1f2a6b", "#34389a", "#5b45b0", "#9a55a8", "#e0707a", "#ffad86"], sun: "#ffcf9e", amp: 0.07, tilt: -0.05, hero: "#ffffff" },
+    lagoon: { name: "Lagoon", style: "waves", glass: "light", bg: "#eaf6f3", bands: ["#cdeee8", "#a3dfd9", "#6fc8c6", "#3aa9b0", "#178795", "#0c5f70"], sun: null, amp: 0.05, tilt: 0.04, hero: "#0c3f4a" },
+    ember: { name: "Ember", style: "waves", glass: "dark", bg: "#22081a", bands: ["#43102b", "#6f1736", "#a32437", "#d24d2f", "#f08a35", "#fbc65a"], sun: "#ffd27a", amp: 0.09, tilt: 0.03, hero: "#ffffff" },
+    mist: { name: "Mist", style: "waves", glass: "light", bg: "#f4f2f8", bands: ["#e6e2f2", "#d4cdea", "#bdb3df", "#a397cf", "#8679bd", "#6b5ea6"], sun: null, amp: 0.06, tilt: -0.03, hero: "#2c2452" },
+    aurora: { name: "Aurora", style: "waves", glass: "dark", bg: "#04121c", bands: ["#062a3a", "#0a4150", "#0e5d63", "#147a70", "#1f9a7c", "#33b388"], sun: null, amp: 0.11, tilt: 0.06, hero: "#e9fff4" },
+    lava: { name: "Lava Lamp", style: "blobs", glass: "dark", bg: "#160433", colors: ["#ff4d6d", "#ff9e00", "#7b2cbf", "#3a0ca3", "#f72585"], hero: "#ffffff" },
+    pastel: { name: "Pastel", style: "blobs", glass: "light", bg: "#fbf4ff", colors: ["#ffc8dd", "#bde0fe", "#cdb4db", "#a2d2ff", "#fff1a8"], hero: "#3d2c5c" },
+    outrun: { name: "Outrun", style: "synth", glass: "dark", bg: "#12002b", sky: ["#12002b", "#5a0f6e", "#ff2bd6"], sunA: "#ffe25c", sunB: "#ff2b8a", grid: "#ff2bd6", ground: "#0b0018", hero: "#fff2fb" },
+    nebula: { name: "Nebula", style: "stars", glass: "dark", bg: "#03010d", colors: ["#5b2a86", "#1b4b8f", "#a3195b"], hero: "#ffffff" },
+    bauhaus: { name: "Bauhaus", style: "bauhaus", glass: "light", bg: "#f1e9d6", colors: ["#e63946", "#1d3557", "#f4a261", "#2a9d8f", "#111111"], hero: "#111111" },
+    topo: { name: "Topography", style: "contour", glass: "dark", bg: "#0d2520", line: "#3ddc97", hero: "#e8fff5" },
+    acid: { name: "Acid", style: "plasma", glass: "dark", bg: "#000000", hue: 280, hero: "#ffffff" },
+    image: { name: "Your image", style: "none", glass: "dark", bg: "#111", hero: "#ffffff" }
   };
 
   // src/js/wallpaper/wallpaper.js
-  function drawWaves(ctx, W2, H, key, t2 = 0, energy = 0) {
-    const w = THEMES[key] || THEMES.dusk;
+  init_util();
+  var TAU = Math.PI * 2;
+  function waves(ctx, W2, H, w, t2, energy) {
     ctx.fillStyle = w.bg;
     ctx.fillRect(0, 0, W2, H);
     if (w.sun) {
@@ -1996,6 +2194,198 @@ select.field { appearance: auto; padding: 0 10px; }
       ctx.fillStyle = col;
       ctx.fill();
     });
+  }
+  function blobs(ctx, W2, H, w, t2, energy) {
+    ctx.fillStyle = w.bg;
+    ctx.fillRect(0, 0, W2, H);
+    const m = Math.max(W2, H), light2 = w.glass === "light";
+    w.colors.forEach((c, i) => {
+      const x = W2 * (0.5 + 0.38 * Math.sin(t2 * (0.11 + i * 0.03) + i * 2.1)), y = H * (0.5 + 0.36 * Math.cos(t2 * (0.09 + i * 0.025) + i * 1.3));
+      const r = m * (0.34 + 0.08 * Math.sin(t2 * 0.2 + i) + energy * 0.08);
+      const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+      g.addColorStop(0, c);
+      g.addColorStop(1, c + "00");
+      ctx.globalAlpha = light2 ? 0.85 : 0.9;
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, W2, H);
+    });
+    ctx.globalAlpha = 1;
+  }
+  function synth(ctx, W2, H, w, t2, energy) {
+    const hz = H * 0.62, sky = ctx.createLinearGradient(0, 0, 0, hz);
+    w.sky.forEach((c, i) => sky.addColorStop(i / (w.sky.length - 1), c));
+    ctx.fillStyle = sky;
+    ctx.fillRect(0, 0, W2, hz);
+    const R = Math.min(W2, H) * 0.24 * (1 + energy * 0.05), cx = W2 / 2, cy = hz - R * 0.32;
+    const sun = ctx.createLinearGradient(0, cy - R, 0, cy + R);
+    sun.addColorStop(0, w.sunA);
+    sun.addColorStop(1, w.sunB);
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(cx, cy, R, 0, TAU);
+    ctx.clip();
+    ctx.fillStyle = sun;
+    ctx.fillRect(cx - R, cy - R, R * 2, R * 2);
+    ctx.fillStyle = w.sky[1];
+    for (let i = 0; i < 7; i++) {
+      const yy = cy + R * (0.05 + i * 0.14), hh = R * (0.02 + i * 0.016);
+      ctx.fillRect(cx - R, yy, R * 2, hh);
+    }
+    ctx.restore();
+    ctx.fillStyle = w.ground;
+    ctx.fillRect(0, hz, W2, H - hz);
+    ctx.strokeStyle = w.grid;
+    ctx.lineWidth = Math.max(1, H / 500);
+    ctx.shadowColor = w.grid;
+    ctx.shadowBlur = 8 + energy * 14;
+    ctx.globalAlpha = 0.75 + energy * 0.25;
+    ctx.beginPath();
+    for (let i = -24; i <= 24; i++) {
+      ctx.moveTo(cx + i * W2 * 0.012, hz);
+      ctx.lineTo(cx + i * W2 * 0.11, H);
+    }
+    const N2 = 14, ph = t2 * 0.6 % 1;
+    for (let k = 0; k < N2; k++) {
+      const f = (k + ph) / N2, y = hz + (H - hz) * f * f;
+      ctx.moveTo(0, y);
+      ctx.lineTo(W2, y);
+    }
+    ctx.moveTo(0, hz);
+    ctx.lineTo(W2, hz);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha = 1;
+  }
+  var starCache = /* @__PURE__ */ new Map();
+  function stars(ctx, W2, H, w, t2, energy) {
+    ctx.fillStyle = w.bg;
+    ctx.fillRect(0, 0, W2, H);
+    const m = Math.max(W2, H);
+    w.colors.forEach((c, i) => {
+      const x = W2 * (0.3 + 0.4 * (i * 0.37 % 1) + 0.04 * Math.sin(t2 * 0.05 + i)), y = H * (0.3 + 0.4 * (i * 0.61 % 1) + 0.04 * Math.cos(t2 * 0.04 + i));
+      const g = ctx.createRadialGradient(x, y, 0, x, y, m * 0.45);
+      g.addColorStop(0, c + "aa");
+      g.addColorStop(1, c + "00");
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, W2, H);
+    });
+    const key = 260;
+    if (!starCache.has(key)) {
+      const r = rng(42);
+      starCache.set(key, [...Array(key)].map(() => [r(), r(), r(), r() * TAU]));
+    }
+    ctx.fillStyle = "#fff";
+    starCache.get(key).forEach(([x, y, z, p]) => {
+      const px2 = (x + t2 * 4e-3 * (0.3 + z)) % 1 * W2, py2 = y * H;
+      ctx.globalAlpha = Math.min(1, (0.35 + 0.65 * Math.abs(Math.sin(t2 * (0.6 + z) + p))) * (0.5 + z * 0.5) + energy * 0.3);
+      ctx.fillRect(px2, py2, 0.6 + z * 1.6, 0.6 + z * 1.6);
+    });
+    ctx.globalAlpha = 1;
+  }
+  function bauhaus(ctx, W2, H, w, t2, energy) {
+    ctx.fillStyle = w.bg;
+    ctx.fillRect(0, 0, W2, H);
+    const cols = W2 > H ? 5 : 3, rows = Math.ceil(H / (W2 / cols)), s = W2 / cols, r = rng(7);
+    for (let j = 0; j < rows; j++) for (let i = 0; i < cols; i++) {
+      const kind = Math.floor(r() * 5), c = w.colors[Math.floor(r() * w.colors.length)], c2 = w.colors[Math.floor(r() * w.colors.length)], dir = r() < 0.5 ? -1 : 1;
+      const x = i * s + s / 2, y = j * s + s / 2, rot = Math.round(r() * 4) * Math.PI / 2 + Math.sin(t2 * 0.25 + i + j) * 0.5 * dir;
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(rot);
+      ctx.scale(1 + energy * 0.06, 1 + energy * 0.06);
+      ctx.fillStyle = c;
+      const h = s * 0.42;
+      if (kind === 0) {
+        ctx.beginPath();
+        ctx.arc(0, 0, h, 0, TAU);
+        ctx.fill();
+        ctx.fillStyle = c2;
+        ctx.beginPath();
+        ctx.arc(0, 0, h * 0.45, 0, TAU);
+        ctx.fill();
+      } else if (kind === 1) {
+        ctx.beginPath();
+        ctx.arc(0, h * 0.4, h, Math.PI, TAU);
+        ctx.fill();
+      } else if (kind === 2) {
+        ctx.beginPath();
+        ctx.moveTo(-h, -h);
+        ctx.arc(-h, -h, h * 2, 0, Math.PI / 2);
+        ctx.closePath();
+        ctx.fill();
+      } else if (kind === 3) {
+        ctx.fillRect(-h, -h * 0.35, h * 2, h * 0.7);
+        ctx.fillStyle = c2;
+        ctx.fillRect(-h * 0.35, -h, h * 0.7, h * 2);
+      } else {
+        ctx.beginPath();
+        ctx.moveTo(0, -h);
+        ctx.lineTo(h, h);
+        ctx.lineTo(-h, h);
+        ctx.closePath();
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+  }
+  function contour(ctx, W2, H, w, t2, energy) {
+    ctx.fillStyle = w.bg;
+    ctx.fillRect(0, 0, W2, H);
+    ctx.strokeStyle = w.line;
+    ctx.lineWidth = Math.max(1, H / 700);
+    const m = Math.max(W2, H), centers = [[0.28, 0.4, 1], [0.76, 0.66, 1.4]];
+    centers.forEach(([cx, cy, k], ci) => {
+      for (let ring2 = 1; ring2 <= 18; ring2++) {
+        const base = ring2 * m * 0.03 * k;
+        ctx.globalAlpha = (0.15 + 0.5 * (1 - ring2 / 18)) * (0.8 + energy * 0.4);
+        ctx.beginPath();
+        for (let a = 0; a <= 96; a++) {
+          const ang = a / 96 * TAU, rr = base * (1 + 0.13 * Math.sin(ang * 3 + t2 * 0.3 + ring2 * 0.35 + ci) + 0.06 * Math.sin(ang * 7 - t2 * 0.22 + ring2 * 0.2));
+          const x = cx * W2 + Math.cos(ang) * rr, y = cy * H + Math.sin(ang) * rr * 0.8;
+          a ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+        }
+        ctx.stroke();
+      }
+    });
+    ctx.globalAlpha = 1;
+  }
+  var plasmaCv = typeof document !== "undefined" ? document.createElement("canvas") : null;
+  function plasma(ctx, W2, H, w, t2, energy) {
+    const pw = 96, ph = Math.max(24, Math.round(96 * H / W2));
+    plasmaCv.width = pw;
+    plasmaCv.height = ph;
+    const p = plasmaCv.getContext("2d"), img = p.createImageData(pw, ph), d = img.data;
+    for (let y = 0; y < ph; y++) for (let x = 0; x < pw; x++) {
+      const v = Math.sin(x * 0.07 + t2) + Math.sin(y * 0.09 - t2 * 0.7) + Math.sin((x + y) * 0.05 + t2 * 0.5) + Math.sin(Math.hypot(x - pw / 2, y - ph / 2) * 0.12 - t2);
+      const hue = (w.hue + v * 50 + t2 * 12) % 360, l = 0.45 + 0.1 * Math.sin(v * 2) + energy * 0.08;
+      const [r, g, b] = hsl(hue / 360, 0.85, l), i = (y * pw + x) * 4;
+      d[i] = r;
+      d[i + 1] = g;
+      d[i + 2] = b;
+      d[i + 3] = 255;
+    }
+    p.putImageData(img, 0, 0);
+    ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(plasmaCv, 0, 0, W2, H);
+  }
+  function hsl(h, s, l) {
+    const q = l < 0.5 ? l * (1 + s) : l + s - l * s, p = 2 * l - q;
+    const f = (t2) => {
+      t2 = (t2 + 1) % 1;
+      return 255 * (t2 < 1 / 6 ? p + (q - p) * 6 * t2 : t2 < 0.5 ? q : t2 < 2 / 3 ? p + (q - p) * (2 / 3 - t2) * 6 : p);
+    };
+    return [f(h + 1 / 3), f(h), f(h - 1 / 3)];
+  }
+  function gradient({ colorA: a, colorB: b, gradStyle = "linear", gradAngle = 160, gradFlow = false }) {
+    if (gradStyle === "radial") return `radial-gradient(circle at 30% 25%, ${a}, ${b} 75%)`;
+    if (gradStyle === "conic") return `conic-gradient(from ${gradAngle}deg at 50% 50%, ${a}, ${b}, ${a})`;
+    if (gradStyle === "mesh") return `radial-gradient(at 15% 20%, ${a} 0, transparent 55%), radial-gradient(at 85% 15%, ${b} 0, transparent 50%), radial-gradient(at 70% 85%, ${a} 0, transparent 55%), radial-gradient(at 20% 90%, ${b} 0, transparent 55%), linear-gradient(${gradAngle}deg, ${a}, ${b})`;
+    return `linear-gradient(${gradAngle}deg, ${a}, ${b}${gradFlow ? ", " + a : ""})`;
+  }
+  var STYLES = { waves, blobs, synth, stars, bauhaus, contour, plasma };
+  function drawTheme(ctx, W2, H, key, t2 = 0, energy = 0) {
+    const w = THEMES[key] || THEMES.dusk;
+    (STYLES[w.style] || waves)(ctx, W2, H, w, t2, energy);
   }
   var Wallpaper = class {
     constructor(root) {
@@ -2038,7 +2428,8 @@ select.field { appearance: auto; padding: 0 10px; }
         this.video.pause();
       }
       [this.img, this.img2, this.video].forEach((e) => e.style.objectFit = this.o.fit);
-      this.root.style.background = k === "color" ? `linear-gradient(160deg, ${this.o.colorA}, ${this.o.colorB})` : "";
+      this.root.style.background = k === "color" ? gradient(this.o) : "";
+      this.root.classList.toggle("flow", k === "color" && !!this.o.gradFlow && this.o.motion !== false);
       clearInterval(this.slideTimer);
       if (k === "slideshow" && this.slides.length > 1) this.slideTimer = setInterval(() => this.nextSlide(), Math.max(5, this.o.slideEvery) * 1e3);
       this.draw();
@@ -2079,7 +2470,7 @@ select.field { appearance: auto; padding: 0 10px; }
       this.target = level2;
     }
     draw() {
-      if (this.o.kind === "theme") drawWaves(this.ctx, this.W, this.H, this.o.theme, this.t, this.energy);
+      if (this.o.kind === "theme") drawTheme(this.ctx, this.W, this.H, this.o.theme, this.t, this.energy);
     }
     loop(now) {
       requestAnimationFrame(this.loop);
@@ -2099,11 +2490,57 @@ select.field { appearance: auto; padding: 0 10px; }
     }
   };
 
-  // src/js/main.js
-  init_media();
+  // src/js/wallpaper/media.js
+  init_idb();
+  init_bus();
+  var urls = /* @__PURE__ */ new Map();
+  var url = (rec) => {
+    if (!urls.has(rec.id)) urls.set(rec.id, URL.createObjectURL(rec.blob));
+    return urls.get(rec.id);
+  };
+  var typeOf = (name, mime = "") => /gif$/i.test(mime) || /\.gif$/i.test(name) ? "gif" : /^video\//.test(mime) || /\.(mp4|webm|mov|m4v|ogv)$/i.test(name) ? "video" : "image";
+  var MEDIA_RE = /\.(jpe?g|png|webp|gif|bmp|avif|mp4|webm|mov|m4v|ogv)$/i;
+  var wpMedia = { local: [], we: { image: "", video: "", folder: [] } };
+  function mediaItems(type) {
+    const we = [];
+    if (wpMedia.we.image) we.push({ id: "we:image", url: wpMedia.we.image, type: typeOf(wpMedia.we.image), name: "Image property", source: "we" });
+    if (wpMedia.we.video) we.push({ id: "we:video", url: wpMedia.we.video, type: "video", name: "Video property", source: "we" });
+    const all = [...wpMedia.local, ...we, ...wpMedia.we.folder];
+    return type ? all.filter((i) => type === "slides" ? i.type !== "video" : i.type === type) : all;
+  }
+  var findMedia = (id) => mediaItems().find((i) => i.id === id);
+  async function loadWallpaperMedia() {
+    const all = await files.all();
+    wpMedia.local = all.filter((r) => r.type === "wallpaper").sort((a, b) => b.added - a.added).map((r) => ({ id: r.id, url: url(r), type: typeOf(r.name || "", r.mime), name: r.name || "File", source: "local" }));
+    bus.emit("wallpaper:media");
+  }
+  function setWEFolder(paths) {
+    wpMedia.we.folder = paths.filter((p) => MEDIA_RE.test(p)).map((p) => ({ id: "we:" + p, url: "file:///" + p.replace(/\\/g, "/"), type: typeOf(p), name: p.split(/[\\/]/).pop(), source: "we" }));
+    bus.emit("wallpaper:media");
+  }
+  async function addMedia(list2) {
+    const ids = [];
+    for (const f of list2) {
+      if (!/^(image|video)\//.test(f.type) && !MEDIA_RE.test(f.name)) continue;
+      const id = "wp:lib:" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+      await files.put({ id, type: "wallpaper", mime: f.type, name: f.name, blob: f, added: Date.now() });
+      ids.push(id);
+    }
+    await loadWallpaperMedia();
+    return ids.map(findMedia).filter(Boolean);
+  }
+  async function removeMedia(id) {
+    await files.del(id);
+    if (urls.has(id)) {
+      URL.revokeObjectURL(urls.get(id));
+      urls.delete(id);
+    }
+    await loadWallpaperMedia();
+  }
 
-  // src/js/components/menu.js
+  // src/js/components/keyboard.js
   init_util();
+  init_settings();
 
   // src/js/glass/motion.js
   init_util();
@@ -2167,7 +2604,106 @@ select.field { appearance: auto; padding: 0 10px; }
     el2.animate([{ transform: "scale(1)" }, { transform: "scale(0.94, 0.9)" }, { transform: "scale(1.02, 1.04)" }, { transform: "scale(1)" }], { duration: 380, easing: EASE_OUT, composite: "add" });
   }
 
+  // src/js/components/keyboard.js
+  var LAYOUTS = {
+    abc: [["q", "w", "e", "r", "t", "y", "u", "i", "o", "p"], ["a", "s", "d", "f", "g", "h", "j", "k", "l"], ["shift", "z", "x", "c", "v", "b", "n", "m", "back"], ["num", ",", "space", ".", "enter", "done"]],
+    num: [["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"], ["-", "/", ":", ";", "(", ")", "&", "@", '"'], ["#", "=", "+", "?", "!", "'", "_", "\\", "back"], ["abc", ",", "space", ".", "enter", "done"]]
+  };
+  var LABEL = { shift: "⇧", back: "⌫", num: "123", abc: "ABC", space: "space", enter: "return", done: "Done" };
+  var isText = (t2) => t2 && (t2.tagName === "TEXTAREA" || t2.tagName === "INPUT" && /^(text|search|url|email|)$/i.test(t2.type)) && !t2.readOnly && !t2.disabled;
+  var keyboardOn = () => cfg.keyboard === "on" || cfg.keyboard !== "off" && inWallpaperEngine();
+  function initKeyboard() {
+    const kb = el("div", "glass kb");
+    kb.hidden = true;
+    kb.setAttribute("role", "group");
+    kb.setAttribute("aria-label", "On-screen keyboard");
+    const pane2 = el("div", "pane");
+    kb.append(pane2);
+    document.body.append(kb);
+    glassify(kb, "panel");
+    let target = null, layout2 = "abc", shift = false;
+    function draw2() {
+      pane2.textContent = "";
+      LAYOUTS[layout2].forEach((keys) => {
+        const r = el("div", "kb-row");
+        keys.forEach((k) => {
+          const special = k in LABEL;
+          const b = el("button", "kb-key" + (special ? " act k-" + k : ""), special ? LABEL[k] : shift ? k.toUpperCase() : k);
+          b.type = "button";
+          b.dataset.k = k;
+          if (k === "shift" && shift) b.classList.add("on");
+          r.append(b);
+        });
+        pane2.append(r);
+      });
+    }
+    function insert(text) {
+      const t2 = target;
+      if (!t2) return;
+      const s = t2.selectionStart ?? t2.value.length, e = t2.selectionEnd ?? s;
+      t2.setRangeText(text, s, e, "end");
+      t2.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+    function press2(k) {
+      const t2 = target;
+      if (!t2) return;
+      if (k === "shift") {
+        shift = !shift;
+        return draw2();
+      }
+      if (k === "num" || k === "abc") {
+        layout2 = k;
+        shift = false;
+        return draw2();
+      }
+      if (k === "done") return hide(true);
+      if (k === "back") {
+        const s = t2.selectionStart ?? t2.value.length, e = t2.selectionEnd ?? s;
+        if (s !== e) t2.setRangeText("", s, e, "end");
+        else if (s > 0) t2.setRangeText("", s - 1, s, "end");
+        return t2.dispatchEvent(new Event("input", { bubbles: true }));
+      }
+      if (k === "enter") {
+        if (t2.tagName === "TEXTAREA") return insert("\n");
+        if (t2.form) t2.form.requestSubmit();
+        else t2.dispatchEvent(new CustomEvent("kbenter", { bubbles: true }));
+        return;
+      }
+      insert(k === "space" ? " " : shift ? k.toUpperCase() : k);
+      if (shift) {
+        shift = false;
+        draw2();
+      }
+    }
+    kb.addEventListener("pointerdown", (e) => e.preventDefault());
+    kb.addEventListener("click", (e) => {
+      const b = e.target.closest(".kb-key");
+      if (b) press2(b.dataset.k);
+    });
+    function show(t2) {
+      target = t2;
+      layout2 = "abc";
+      shift = !t2.value;
+      draw2();
+      if (kb.hidden) liquidOpen(kb, null);
+      requestAnimationFrame(() => t2.scrollIntoView({ block: "center", behavior: "smooth" }));
+    }
+    function hide(blur) {
+      if (blur && target) target.blur();
+      target = null;
+      if (!kb.hidden) liquidClose(kb, null);
+    }
+    addEventListener("focusin", (e) => {
+      if (keyboardOn() && isText(e.target)) show(e.target);
+    });
+    addEventListener("focusout", () => setTimeout(() => {
+      if (target && !isText(document.activeElement)) hide(false);
+    }, 0));
+    return { hide };
+  }
+
   // src/js/components/menu.js
+  init_util();
   var open = null;
   var CHECK = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
   function closeMenus() {
@@ -2275,8 +2811,20 @@ select.field { appearance: auto; padding: 0 10px; }
   var longDate = (d, f = cfg.clock.dateFormat) => new Intl.DateTimeFormat(void 0, DATE[f] || DATE.long).format(d);
 
   // src/js/widgets/clock.js
-  var CLOCK_STYLES = [["digital", "Digital"], ["analog", "Analog"], ["minimal", "Minimal"], ["stacked", "Stacked"]];
-  var CLOCK_FONTS = [["system", "System"], ["rounded", "Rounded"], ["serif", "Serif"], ["mono", "Mono"], ["condensed", "Condensed"]];
+  var CLOCK_STYLES = [["digital", "Digital"], ["analog", "Analog"], ["minimal", "Minimal"], ["stacked", "Stacked"], ["flip", "Flip"], ["words", "Words"], ["rings", "Rings"], ["outline", "Outline"], ["neon", "Neon"], ["lcd", "LCD"]];
+  var CLOCK_FONTS = [["system", "System"], ["rounded", "Rounded"], ["serif", "Serif"], ["mono", "Mono"], ["condensed", "Condensed"], ["pixel", "Pixel"]];
+  var DIGITAL = ["digital", "minimal", "outline", "neon", "lcd"];
+  var ONES = ["twelve", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen"];
+  var TENS = ["", "", "twenty", "thirty", "forty", "fifty"];
+  var num = (n) => n < 20 ? ONES[n] : TENS[Math.floor(n / 10)] + (n % 10 ? "-" + ONES[n % 10] : "");
+  function timeWords(d) {
+    const h = d.getHours() % 12, m = d.getMinutes();
+    return ["It’s", h === 0 ? "twelve" : ONES[h], m === 0 ? "o’clock" : m < 10 ? "oh " + ONES[m] : num(m)];
+  }
+  var ring = (r, cls) => {
+    const C = 2 * Math.PI * r;
+    return `<circle cx="60" cy="60" r="${r}" fill="none" class="rg-track" stroke-width="7"/><circle cx="60" cy="60" r="${r}" fill="none" class="rg ${cls}" stroke-width="7" stroke-linecap="round" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${C.toFixed(1)}" data-c="${C.toFixed(1)}" transform="rotate(-90 60 60)"/>`;
+  };
   var CLOCK_WEIGHTS = [["auto", "Auto"], ["300", "Light"], ["500", "Medium"], ["700", "Bold"], ["800", "Heavy"]];
   var CLOCK_NUMERALS = [["four", "12 · 3 · 6 · 9"], ["all", "All"], ["none", "None"]];
   function analogSVG(size, numerals) {
@@ -2305,6 +2853,10 @@ select.field { appearance: auto; padding: 0 10px; }
       host.textContent = "";
       if (o.style === "analog") host.innerHTML = analogSVG(o.size || 140, o.numerals) + `<div class="cf-date"></div>`;
       else if (o.style === "stacked") host.innerHTML = `<div class="cf-h num"></div><div class="cf-m num"><span class="cf-mm"></span><span class="cf-ap"></span></div><div class="cf-s num"></div><div class="cf-date"></div>`;
+      else if (o.style === "flip") host.innerHTML = `<div class="cf-flip num"><span class="fl" data-i="0"></span><span class="fl" data-i="1"></span><span class="fl-sep"></span><span class="fl" data-i="2"></span><span class="fl" data-i="3"></span><span class="fl-s"><span class="fl sm" data-i="4"></span><span class="fl sm" data-i="5"></span></span><span class="cf-ap"></span></div><div class="cf-date"></div>`;
+      else if (o.style === "words") host.innerHTML = `<div class="cf-words"><span class="w0"></span><b class="w1"></b><span class="w2"></span></div><div class="cf-date"></div>`;
+      else if (o.style === "rings") host.innerHTML = `<div class="cf-rings"><svg viewBox="0 0 120 120" aria-hidden="true">${ring(54, "rg-h")}${ring(44, "rg-m")}${ring(34, "rg-s")}</svg><div class="cf-time num"><span class="cf-hh"></span><span class="cf-colon"></span><span class="cf-mm"></span></div></div><div class="cf-date"></div>`;
+      else if (o.style === "lcd") host.innerHTML = `<div class="cf-lcd"><div class="cf-time num cf-ghost" aria-hidden="true"></div><div class="cf-time num"><span class="cf-hh"></span><span class="cf-colon"></span><span class="cf-mm"></span><span class="cf-sec"></span><span class="cf-ap"></span></div></div><div class="cf-date"></div>`;
       else host.innerHTML = `<div class="cf-time num"><span class="cf-hh"></span><span class="cf-colon"></span><span class="cf-mm"></span><span class="cf-sec"></span><span class="cf-ap"></span></div><div class="cf-date"></div>`;
       built = `${o.style}|${o.size || ""}|${o.numerals || ""}`;
     }
@@ -2312,7 +2864,7 @@ select.field { appearance: auto; padding: 0 10px; }
       tick(now) {
         const o = getOpts();
         if (built !== `${o.style}|${o.size || ""}|${o.numerals || ""}`) build2(o);
-        host.className = `clockface cf-${o.style}${o.blink ? " blink" : ""}`;
+        host.className = `clockface cf-${o.style}${o.blink ? " blink" : ""}${DIGITAL.includes(o.style) ? " cf-digitalish" : ""}`;
         host.dataset.font = o.font || "system";
         const w = o.weight && o.weight !== "auto" ? +o.weight : 0;
         if (w) {
@@ -2335,6 +2887,43 @@ select.field { appearance: auto; padding: 0 10px; }
           return;
         }
         const t2 = timeParts(now);
+        if (o.style === "words") {
+          const [a, b, c] = timeWords(now);
+          q(".w0").textContent = a;
+          q(".w1").textContent = b;
+          q(".w2").textContent = c;
+          return;
+        }
+        if (o.style === "flip") {
+          const digits = (t2.h.padStart(2, "0") + t2.m + t2.s).split("");
+          host.querySelectorAll(".fl").forEach((f) => {
+            const v = digits[+f.dataset.i];
+            if (f.textContent !== v) {
+              const first = !f.textContent;
+              f.textContent = v;
+              if (!first && !matchMedia("(prefers-reduced-motion: reduce)").matches) f.animate([{ transform: "perspective(400px) rotateX(-90deg)" }, { transform: "perspective(400px) rotateX(0)" }], { duration: 380, easing: "cubic-bezier(0.22, 1, 0.36, 1)" });
+            }
+          });
+          q(".fl-sep").textContent = t2.sep;
+          q(".fl-s").hidden = !o.seconds;
+          q(".cf-ap").textContent = t2.ap;
+          q(".cf-ap").hidden = !t2.ap;
+          return;
+        }
+        if (o.style === "rings") {
+          const H = now.getHours() % 12 + now.getMinutes() / 60, Mi = now.getMinutes() + now.getSeconds() / 60, Se = now.getSeconds();
+          [[".rg-h", H / 12], [".rg-m", Mi / 60], [".rg-s", Se / 60]].forEach(([sel, f]) => {
+            const c = q(sel), C = +c.dataset.c;
+            c.setAttribute("stroke-dashoffset", (C * (1 - f)).toFixed(1));
+          });
+          q(".rg-s").style.display = o.seconds ? "" : "none";
+          host.querySelectorAll(".rg-track")[2].style.display = o.seconds ? "" : "none";
+          q(".cf-hh").textContent = t2.h;
+          q(".cf-colon").textContent = t2.sep;
+          q(".cf-mm").textContent = t2.m;
+          return;
+        }
+        if (o.style === "lcd") q(".cf-ghost").textContent = `88${t2.sep}88${o.seconds ? "88" : ""}`;
         if (o.style === "stacked") {
           q(".cf-h").textContent = t2.h.padStart(2, "0");
           q(".cf-mm").textContent = t2.m;
@@ -2359,10 +2948,15 @@ select.field { appearance: auto; padding: 0 10px; }
   function mountClock(pane2) {
     const host = el("div");
     pane2.append(host);
-    pane2.parentElement.style.setProperty("--cf-scale", cfg.clock.size);
-    const face = clockFace(host, cardClockOpts);
+    const card = pane2.parentElement, face = clockFace(host, cardClockOpts);
+    const look = () => {
+      card.style.setProperty("--cf-scale", cfg.clock.size);
+      card.style.setProperty("--cf-align", cfg.clock.align);
+      card.style.setProperty("--cf-justify", { left: "start", right: "end" }[cfg.clock.align] || "center");
+    };
+    look();
     return { tick(now) {
-      pane2.parentElement.style.setProperty("--cf-scale", cfg.clock.size);
+      look();
       face.tick(now);
     } };
   }
@@ -2394,14 +2988,23 @@ select.field { appearance: auto; padding: 0 10px; }
     if (code >= 95) return ["storm", "Thunderstorms"];
     return ["cloud", "Cloudy"];
   }
+  async function searchCities(q) {
+    const g = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=8`).then((r) => r.json());
+    return (g.results || []).map((r) => ({ name: r.name, latitude: r.latitude, longitude: r.longitude, label: [r.name, r.admin1, r.country_code].filter(Boolean).join(", ") }));
+  }
+  async function locateByIP() {
+    const r = await fetch("https://ipapi.co/json/").then((r2) => r2.json());
+    if (!r || !r.city) throw new Error("unknown");
+    return { name: r.city, latitude: r.latitude, longitude: r.longitude, label: [r.city, r.region, r.country_code].filter(Boolean).join(", ") };
+  }
   function mountWeather(pane2) {
     pane2.innerHTML = `<div class="wx-top"><div><div class="wx-city"></div><div class="wx-temp num"></div></div>
     <div class="wx-cond"><span class="wx-icon"></span><span class="wx-label">Loading</span><div class="soft num wx-hilo"></div></div></div>
     <div class="wx-hours num"></div><div class="wx-note"></div>`;
     const q = (s) => pane2.querySelector(s);
     let timer, last = null;
-    const render = (d, live2) => {
-      last = [d, live2];
+    const render = (d, live2, reason) => {
+      last = [d, live2, reason];
       q(".wx-city").textContent = d.city;
       q(".wx-temp").textContent = Math.round(d.temp) + "°";
       const [ic, label] = codeInfo(d.code, d.isDay);
@@ -2419,7 +3022,7 @@ select.field { appearance: auto; padding: 0 10px; }
         hrs.append(c);
       });
       const note = q(".wx-note");
-      note.textContent = live2 ? `Updated ${fmtTime(/* @__PURE__ */ new Date())} · Open-Meteo` : "Sample forecast. Live weather can’t load in this view; it works in Wallpaper Engine and when the file is opened directly.";
+      note.textContent = live2 ? `Updated ${fmtTime(/* @__PURE__ */ new Date())} · Open-Meteo` : reason === "city" ? `Couldn’t find “${cfg.city}”. Pick a city in Settings › Weather. Showing a sample.` : "Sample forecast. Live weather can’t load right now (offline?). It retries every few minutes.";
       note.classList.toggle("warn", !live2);
       bus.emit("weather", { temp: d.temp, code: d.code, isDay: d.isDay, live: live2 });
       bus.emit("layout");
@@ -2441,12 +3044,20 @@ select.field { appearance: auto; padding: 0 10px; }
     };
     async function load() {
       clearTimeout(timer);
+      let notFound = false;
       try {
         const ctl = new AbortController();
         setTimeout(() => ctl.abort(), 7e3);
-        const g = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(cfg.city)}&count=1`, { signal: ctl.signal }).then((r) => r.json());
-        if (!g.results || !g.results.length) throw new Error("No such city");
-        const p = g.results[0], u = cfg.unit === "f" ? "&temperature_unit=fahrenheit" : "";
+        let p = cfg.geo && cfg.geo.name === cfg.city ? cfg.geo : null;
+        if (!p) {
+          const g = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(cfg.city)}&count=1`, { signal: ctl.signal }).then((r) => r.json());
+          if (!g.results || !g.results.length) {
+            notFound = true;
+            throw new Error("No such city");
+          }
+          p = { name: g.results[0].name, latitude: g.results[0].latitude, longitude: g.results[0].longitude };
+        }
+        const u = cfg.unit === "f" ? "&temperature_unit=fahrenheit" : "";
         const f = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${p.latitude}&longitude=${p.longitude}&current=temperature_2m,weather_code,is_day&hourly=temperature_2m,weather_code,is_day&daily=temperature_2m_max,temperature_2m_min&forecast_days=2&timezone=auto${u}`, { signal: ctl.signal }).then((r) => r.json());
         let idx2 = f.hourly.time.findIndex((t2) => t2.slice(0, 13) === f.current.time.slice(0, 13));
         if (idx2 < 0) idx2 = 0;
@@ -2454,7 +3065,7 @@ select.field { appearance: auto; padding: 0 10px; }
         render({ city: p.name, temp: f.current.temperature_2m, code: f.current.weather_code, isDay: !!f.current.is_day, hi: f.daily.temperature_2m_max[0], lo: f.daily.temperature_2m_min[0], hours }, true);
         timer = setTimeout(load, 15 * 6e4);
       } catch {
-        render(sample2(), false);
+        render(sample2(), false, notFound ? "city" : "net");
         timer = setTimeout(load, 5 * 6e4);
       }
     }
@@ -2556,7 +3167,7 @@ select.field { appearance: auto; padding: 0 10px; }
       for (let x = -d; x < d; x += step) ctx.fillRect(x, -d, Math.max(1, m * 0.012), d * 2);
       ctx.restore();
       const px2 = W2 * (W2 > 900 ? 0.56 : 0.6), py2 = H * 0.6, pr = m * 0.27;
-      const ring = (front) => {
+      const ring2 = (front) => {
         ctx.save();
         ctx.translate(px2, py2);
         ctx.rotate(-0.28);
@@ -2567,7 +3178,7 @@ select.field { appearance: auto; padding: 0 10px; }
         ctx.stroke();
         ctx.restore();
       };
-      ring(false);
+      ring2(false);
       circle(ctx, px2, py2, pr, p.a);
       ctx.save();
       ctx.beginPath();
@@ -2575,7 +3186,7 @@ select.field { appearance: auto; padding: 0 10px; }
       ctx.clip();
       circle(ctx, px2 + pr * 0.55, py2 + pr * 0.2, pr, p.c);
       ctx.restore();
-      ring(true);
+      ring2(true);
       if (title) drawTitle(ctx, W2, H, t2.album, p.b);
     },
     ostia(ctx, W2, H, t2, title) {
@@ -3095,8 +3706,7 @@ select.field { appearance: auto; padding: 0 10px; }
     const list2 = el("ul", "rm-list");
     const form = el("form", "rm-add");
     form.innerHTML = `<label class="sr-only" for="rmIn">New reminder</label><input class="field" id="rmIn" placeholder="New reminder" autocomplete="off"><button class="pill" type="submit">Add</button>`;
-    const weHint = el("p", "we-hint faint", "Add reminders in Wallpaper Engine’s properties panel; typing isn’t passed to wallpapers.");
-    pane2.append(title, list2, form, weHint);
+    pane2.append(title, list2, form);
     const save = () => store.set("reminders", items);
     function render() {
       list2.textContent = "";
@@ -3245,7 +3855,7 @@ select.field { appearance: auto; padding: 0 10px; }
   function mountFocus(pane2) {
     const C = 2 * Math.PI * 48;
     pane2.innerHTML = `<div class="w-title">Focus Timer</div><div class="fc-body"><div class="fc-ring">
-    <svg width="110" height="110" viewBox="0 0 110 110" aria-hidden="true"><circle cx="55" cy="55" r="48" fill="none" stroke="var(--track-bg)" stroke-width="9"/><circle class="fc-arc" cx="55" cy="55" r="48" fill="none" stroke="#bf5af2" stroke-width="9" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="0"/></svg>
+    <svg width="110" height="110" viewBox="0 0 110 110" aria-hidden="true"><circle cx="55" cy="55" r="48" fill="none" stroke="var(--track-bg)" stroke-width="9"/><circle class="fc-arc" cx="55" cy="55" r="48" fill="none" style="stroke: var(--accent, #bf5af2)" stroke-width="9" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="0"/></svg>
     <span class="t num" role="timer" aria-live="off"></span></div><div class="fc-btns"><button class="pill fc-start">Start</button><button class="pill fc-reset">Reset</button></div></div>`;
     const q = (s2) => pane2.querySelector(s2);
     const s = { total: 1500, left: 1500, running: false, endAt: 0 };
@@ -3357,72 +3967,148 @@ select.field { appearance: auto; padding: 0 10px; }
     const W2 = innerWidth, H = innerHeight, w = node.offsetWidth, h = node.offsetHeight;
     const left = p.ax === "r" ? W2 - p.x - w : p.x, top = p.ay === "b" ? H - p.y - h : p.y;
     node.style.left = clamp(left, 0, Math.max(0, W2 - w)) + "px";
-    node.style.top = clamp(top, 0, Math.max(0, H - Math.min(h, 60))) + "px";
+    node.style.top = clamp(top, 0, Math.max(0, H - h)) + "px";
   }
+  var autoWidth = (W2) => W2 >= 1800 ? 320 : W2 >= 760 ? 300 : Math.min(360, W2 - 24);
+  var LAYOUTS2 = [["columns", "Columns"], ["left", "Sidebar left"], ["right", "Sidebar right"], ["bento", "Bento grid"], ["row", "Bottom row"]];
   function layout({ animate = false } = {}) {
-    const W2 = innerWidth, H = innerHeight, gap = 14, top = TOP(), bottom = H - (cfg.dock.mode === "always" ? 104 : 24);
+    const W2 = innerWidth, H = innerHeight, gap = 14, bottom = H - (cfg.dock.mode === "always" ? 104 : 24);
     const before = /* @__PURE__ */ new Map();
     if (animate) $$(".widget").forEach((w) => {
       if (!w.hidden) before.set(w, w.getBoundingClientRect());
     });
     const vis = ORDER.filter((id) => cfg.widgets[id] && widgetEl(id) && !widgetEl(id).dataset.closing);
+    const cw = autoWidth(W2);
     vis.forEach((id) => {
-      const n = widgetEl(id), cw2 = cfg.cards[id] && cfg.cards[id].width;
-      n.style.width = (cw2 || (W2 >= 1800 ? 320 : W2 >= 760 ? 300 : Math.min(360, W2 - 24))) + "px";
+      const n = widgetEl(id), own = cfg.cards[id] && cfg.cards[id].width;
+      n.style.width = (own || cw) + "px";
     });
     const free = vis.filter((id) => !cfg.positions[id]);
-    const cw = W2 >= 1800 ? 320 : W2 >= 760 ? 300 : Math.min(360, W2 - 24);
-    const cands = [];
-    if (W2 >= 1e3) cands.push([M, W2 - M - cw]);
-    if (W2 >= 1240) cands.push([M, M + cw + gap, W2 - M - cw, W2 - M - 2 * cw - gap]);
-    if (W2 >= 700 && W2 < 1e3) cands.push([Math.round(W2 / 2 - cw - gap / 2), Math.round(W2 / 2 + gap / 2)]);
-    if (!cands.length) cands.push([Math.round((W2 - cw) / 2)]);
+    const mode = W2 < 700 ? "columns" : cfg.layoutMode;
+    placeHero();
     const box = (n) => {
       const l = parseFloat(n.style.left) || 0, t2 = parseFloat(n.style.top) || 0;
       return { l, t: t2, r: l + n.offsetWidth, b: t2 + n.offsetHeight };
     };
-    const taken = vis.filter((id) => cfg.positions[id]).map((id) => {
+    const hit = (occ, l, t2, w, h) => occ.find((o) => o.l < l + w + gap && o.r + gap > l && o.t < t2 + h + gap && o.b + gap > t2);
+    const saved2 = vis.filter((id) => cfg.positions[id]).map((id) => {
       const n = widgetEl(id);
       placeSaved(n, cfg.positions[id]);
-      return box(n);
+      return { n, ay: cfg.positions[id].ay };
+    });
+    const taken = [];
+    [
+      ...saved2.filter((c) => c.ay !== "b").sort((a, b) => parseFloat(a.n.style.top) - parseFloat(b.n.style.top)),
+      ...saved2.filter((c) => c.ay === "b").sort((a, b) => parseFloat(b.n.style.top) - parseFloat(a.n.style.top))
+    ].forEach(({ n, ay }) => {
+      let r = box(n), o, guard = 0;
+      const over = (q) => taken.find((o2) => o2.l < q.r - 1 && o2.r > q.l + 1 && o2.t < q.b - 1 && o2.b > q.t + 1);
+      while ((o = over(r)) && guard++ < 20) {
+        const top = ay === "b" ? o.t - gap - (r.b - r.t) : o.b + gap;
+        if (top < 0 || top + (r.b - r.t) > H) break;
+        n.style.top = top + "px";
+        r = box(n);
+      }
+      taken.push(r);
     });
     let place = {};
-    for (const xs of cands) {
-      const ys = xs.map(() => top), occ = [...taken];
-      place = {};
+    if (mode === "row") {
+      const occ = [...taken];
+      let x = M, base = bottom, rowTop = bottom;
       free.forEach((id) => {
         const n = widgetEl(id), w = n.offsetWidth, h = n.offsetHeight;
-        let c = 0;
-        ys.forEach((y2, i) => {
-          if (y2 < ys[c] - 1) c = i;
-        });
-        let y = ys[c], hit;
-        while (hit = occ.find((o) => o.l < xs[c] + w && o.r > xs[c] && o.t < y + h + gap && o.b + gap > y)) y = hit.b + gap;
-        place[id] = [xs[c], y];
-        occ.push({ l: xs[c], t: y, r: xs[c] + w, b: y + h });
-        ys[c] = y + h + gap;
+        if (x + w > W2 - M && x > M) {
+          x = M;
+          base = rowTop - gap;
+          rowTop = base;
+        }
+        let o;
+        while ((o = hit(occ, x, base - h, w, h)) && x + w <= W2 - M) x = o.r + gap;
+        place[id] = [x, Math.max(TOP(), base - h)];
+        occ.push({ l: x, t: base - h, r: x + w, b: base });
+        rowTop = Math.min(rowTop, base - h);
+        x += w + gap;
       });
-      if (Math.max(...ys) - gap <= bottom) break;
+    } else {
+      let cands = [], top = TOP();
+      const col = (i) => M + i * (cw + gap), colR = (i) => W2 - M - cw - i * (cw + gap);
+      if (mode === "left") cands = [[col(0)], [col(0), col(1)], [col(0), col(1), col(2)]];
+      else if (mode === "right") cands = [[colR(0)], [colR(0), colR(1)], [colR(0), colR(1), colR(2)]];
+      else if (mode === "bento") {
+        const n = clamp(Math.floor((W2 - 2 * M + gap) / (cw + gap)), 1, 4);
+        for (let k = Math.min(3, n); k <= n; k++) {
+          const s0 = Math.round((W2 - (k * cw + (k - 1) * gap)) / 2);
+          cands.push([...Array(k)].map((_, i) => s0 + i * (cw + gap)));
+        }
+        const hero3 = $("#hero");
+        if (hero3 && !hero3.hidden && !cfg.positions.hero) top = Math.max(top, (parseFloat(hero3.style.top) || 0) + hero3.offsetHeight + 28);
+      } else {
+        if (W2 >= 1e3) cands.push([M, W2 - M - cw]);
+        if (W2 >= 1240) cands.push([M, M + cw + gap, W2 - M - cw, W2 - M - 2 * cw - gap]);
+        if (W2 >= 700 && W2 < 1e3) cands.push([Math.round(W2 / 2 - cw - gap / 2), Math.round(W2 / 2 + gap / 2)]);
+      }
+      if (!cands.length) cands.push([Math.round((W2 - cw) / 2)]);
+      for (const xs of cands) {
+        const ys = xs.map(() => top), occ = [...taken];
+        place = {};
+        free.forEach((id) => {
+          const n = widgetEl(id), w = n.offsetWidth, h = n.offsetHeight;
+          let c = 0;
+          ys.forEach((y2, i) => {
+            if (y2 < ys[c] - 1) c = i;
+          });
+          let y = ys[c], o;
+          while (o = hit(occ, xs[c], y, w, h)) y = o.b + gap;
+          place[id] = [xs[c], y];
+          occ.push({ l: xs[c], t: y, r: xs[c] + w, b: y + h });
+          ys[c] = y + h + gap;
+        });
+        if (Math.max(...ys) - gap <= bottom) break;
+      }
     }
     free.forEach((id) => {
       const n = widgetEl(id);
       n.style.left = place[id][0] + "px";
       n.style.top = place[id][1] + "px";
     });
-    placeHero();
     if (animate) flip([...before.keys()].filter((n) => !n.hidden), before);
   }
   function placeHero() {
-    const hero2 = $("#hero");
-    if (!hero2 || hero2.hidden) return;
-    const p = cfg.positions.hero;
-    if (p) {
-      hero2.style.transform = "none";
-      placeSaved(hero2, p);
-    } else {
-      hero2.style.left = (innerWidth - hero2.offsetWidth) / 2 + "px";
-      hero2.style.top = Math.round(innerHeight * 0.14) + "px";
+    const hero3 = $("#hero");
+    if (!hero3 || hero3.hidden) return;
+    const p = cfg.positions.hero, W2 = innerWidth, H = innerHeight, w = hero3.offsetWidth, h = hero3.offsetHeight, cw = autoWidth(W2);
+    hero3.style.transform = "none";
+    if (p) return placeSaved(hero3, p);
+    const mode = W2 < 700 ? "columns" : cfg.layoutMode;
+    let x = (W2 - w) / 2, y = Math.round(H * 0.14);
+    if (mode === "left") {
+      x = M + cw + (W2 - M - cw - w) / 2;
+      y = (H - h) / 2;
+    } else if (mode === "right") {
+      x = (W2 - M - cw - w) / 2;
+      y = (H - h) / 2;
+    } else if (mode === "row") {
+      x = M + 12;
+      y = TOP() + 12;
+    } else if (mode === "bento") y = TOP() + 8;
+    hero3.style.left = clamp(Math.round(x), 0, Math.max(0, W2 - w)) + "px";
+    hero3.style.top = clamp(Math.round(y), 0, Math.max(0, H - h)) + "px";
+  }
+  function placeHeroAt(spot) {
+    const hero3 = $("#hero");
+    if (!hero3) return;
+    if (spot === "auto") {
+      const p = { ...cfg.positions };
+      delete p.hero;
+      set("positions", p);
+      return;
     }
+    const W2 = innerWidth, H = innerHeight, w = hero3.offsetWidth, h = hero3.offsetHeight, pad = 40;
+    const [v, hz] = spot;
+    const left = hz === "l" ? pad : hz === "r" ? W2 - pad - w : (W2 - w) / 2;
+    const top = v === "t" ? TOP() + 8 : v === "b" ? H - pad - h - (cfg.dock.mode === "always" ? 90 : 0) : (H - h) / 2;
+    const ax = hz === "r" ? "r" : "l", ay = v === "b" ? "b" : "t";
+    set("positions", { ...cfg.positions, hero: { ax, ay, x: Math.round(ax === "r" ? W2 - left - w : left), y: Math.round(ay === "b" ? H - top - h : top) } });
   }
   function setWidgetVisible(id, on) {
     const n = widgetEl(id);
@@ -3449,7 +4135,7 @@ select.field { appearance: auto; padding: 0 10px; }
     let d = null;
     const blocked = (t2) => t2.closest("button, input, textarea, select, a, .slider, .seg, .mu-list, .rm-list, [contenteditable]");
     addEventListener("pointerdown", (e) => {
-      if (e.button !== 0) return;
+      if (e.button !== 0 || cfg.lockLayout) return;
       const node = e.target.closest(".widget, #hero");
       if (!node || blocked(e.target)) return;
       const r = node.getBoundingClientRect();
@@ -3488,8 +4174,8 @@ select.field { appearance: auto; padding: 0 10px; }
       }
       if (sx == null) x = Math.round(x / 8) * 8;
       if (sy == null) y = Math.round(y / 8) * 8;
-      x = clamp(x, 0, W2 - w);
-      y = clamp(y, 0, H - Math.min(h, 60));
+      x = clamp(x, 0, Math.max(0, W2 - w));
+      y = clamp(y, 0, Math.max(0, H - h));
       d.node.style.left = x + "px";
       d.node.style.top = y + "px";
       guideX.style.display = sx == null ? "none" : "block";
@@ -3500,17 +4186,20 @@ select.field { appearance: auto; padding: 0 10px; }
     const end = () => {
       if (!d) return;
       if (d.on) {
-        const r = d.node.getBoundingClientRect(), W2 = innerWidth, H = innerHeight;
-        const ax = r.left + r.width / 2 > W2 / 2 ? "r" : "l", ay = r.top + r.height / 2 > H / 2 ? "b" : "t";
+        const W2 = innerWidth, H = innerHeight;
+        const rect = (n) => {
+          const left = parseFloat(n.style.left) || 0, top = parseFloat(n.style.top) || 0;
+          return { left, top, width: n.offsetWidth, height: n.offsetHeight, right: left + n.offsetWidth, bottom: top + n.offsetHeight };
+        };
         const anchor = (rr) => {
-          const ax2 = rr.left + rr.width / 2 > W2 / 2 ? "r" : "l", ay2 = rr.top + rr.height / 2 > H / 2 ? "b" : "t";
-          return { ax: ax2, ay: ay2, x: Math.round(ax2 === "r" ? W2 - rr.right : rr.left), y: Math.round(ay2 === "b" ? H - rr.bottom : rr.top) };
+          const ax = rr.left + rr.width / 2 > W2 / 2 ? "r" : "l", ay = rr.top + rr.height / 2 > H / 2 ? "b" : "t";
+          return { ax, ay, x: Math.round(ax === "r" ? W2 - rr.right : rr.left), y: Math.round(ay === "b" ? H - rr.bottom : rr.top) };
         };
         const pos = { ...cfg.positions };
         $$(".widget").forEach((w) => {
-          if (!w.hidden && w !== d.node && !pos[w.dataset.w]) pos[w.dataset.w] = anchor(w.getBoundingClientRect());
+          if (!w.hidden && !w.dataset.closing && w !== d.node && !pos[w.dataset.w]) pos[w.dataset.w] = anchor(rect(w));
         });
-        pos[d.id] = anchor(r);
+        pos[d.id] = anchor(rect(d.node));
         update({ positions: pos }, { silent: true });
         d.node.classList.remove("dragging");
         document.documentElement.classList.remove("is-dragging");
@@ -3543,7 +4232,7 @@ select.field { appearance: auto; padding: 0 10px; }
     const q = (s) => isl.querySelector(s);
     attach($("#ivL"), { align: "center", reverse: true, bars: 18 });
     attach($("#ivR"), { align: "center", bars: 18 });
-    let pinned = false, hover = false, music = { playing: false }, wx = null;
+    let pinned = false, hover = false, music = { playing: false }, wx = null, battery = null;
     function mode() {
       const m = cfg.island.mode;
       wrap.dataset.mode = m;
@@ -3564,17 +4253,32 @@ select.field { appearance: auto; padding: 0 10px; }
         }
       }
       isl.classList.toggle("playing", !!music.playing);
-      q(".isl-time").hidden = !cfg.island.showTime;
-      q(".isl-wx").hidden = !cfg.island.showWeather || !wx;
+      const I = cfg.island;
+      q(".isl-time").hidden = !I.showTime;
+      q(".isl-wx").hidden = !I.showWeather || !wx;
+      q(".isl-net").style.display = I.showNetwork ? "" : "none";
+      q(".isl-np-wrap").hidden = !I.showNowPlaying;
+      q(".isl-cc").hidden = !I.showCC;
+      q(".isl-menu").hidden = !I.showMenu;
+      drawBattery();
       wrap.classList.toggle("viz-on", cfg.viz.island && !!music.playing && cfg.island.mode !== "bar");
     }
+    let hoverT = 0;
     isl.addEventListener("pointerenter", () => {
-      hover = true;
-      sync();
+      clearTimeout(hoverT);
+      hoverT = setTimeout(() => {
+        hover = true;
+        sync();
+      }, 120);
     });
     wrap.addEventListener("pointerleave", () => {
-      hover = false;
-      sync();
+      clearTimeout(hoverT);
+      hoverT = setTimeout(() => {
+        if (!wrap.matches(":hover")) {
+          hover = false;
+          sync();
+        }
+      }, 320);
     });
     q(".isl-compact").addEventListener("click", (e) => {
       if (e.target.closest("button")) return;
@@ -3587,8 +4291,18 @@ select.field { appearance: auto; padding: 0 10px; }
         sync();
       }
     });
+    let hideT = 0;
     addEventListener("pointermove", (e) => {
-      if (cfg.island.mode === "auto") wrap.classList.toggle("revealed", e.clientY < 10 || wrap.matches(":hover"));
+      if (cfg.island.mode !== "auto") return;
+      const shown = wrap.classList.contains("revealed"), reach = 10 + isl.offsetHeight + 40;
+      if (e.clientY < 10 || shown && (e.clientY < reach || pinned || wrap.matches(":hover, :focus-within"))) {
+        clearTimeout(hideT);
+        hideT = 0;
+        if (!shown) wrap.classList.add("revealed");
+      } else if (shown && !hideT) hideT = setTimeout(() => {
+        hideT = 0;
+        wrap.classList.remove("revealed");
+      }, 450);
     }, { passive: true });
     q(".isl-menu").onclick = (e) => openMenu(e.currentTarget);
     q(".isl-cc").onclick = (e) => toggleCC(e.currentTarget);
@@ -3628,10 +4342,20 @@ select.field { appearance: auto; padding: 0 10px; }
       q(".isl-net").style.opacity = on ? "1" : ".35";
     });
     bus.on("battery", (b) => {
-      const s = q(".isl-bat");
-      s.hidden = false;
-      s.textContent = Math.round(b.level * 100) + "%";
+      battery = b;
+      drawBattery();
     });
+    function drawBattery() {
+      const s = q(".isl-bat"), m = cfg.island.battery;
+      s.hidden = !battery || m === "off";
+      if (s.hidden) return;
+      const pctN = Math.round(battery.level * 100), low = battery.level <= 0.2 && !battery.charging;
+      const fill = low ? "#ff453a" : battery.charging ? "#30d158" : "currentColor";
+      const bolt = battery.charging ? '<path d="M13.6 2.2 9.4 7.3h3l-1.2 4.5 4.3-5.4h-3z" fill="#fff" stroke="rgba(0,0,0,.35)" stroke-width=".5"/>' : "";
+      const icon2 = (inside) => inside ? `<svg class="bat-ic big" width="34" height="16" viewBox="0 0 34 16" aria-hidden="true"><rect x=".75" y=".75" width="29" height="14.5" rx="4.2" fill="none" stroke="currentColor" stroke-opacity=".5" stroke-width="1.5"/><rect x="31" y="5.2" width="2.2" height="5.6" rx="1.1" fill="currentColor" fill-opacity=".5"/><rect x="2.5" y="2.5" width="${(25.5 * battery.level).toFixed(1)}" height="11" rx="2.6" fill="${fill}" fill-opacity="${low || battery.charging ? 0.9 : 0.35}"/><text x="15.2" y="11.6" text-anchor="middle" font-size="9.5" font-weight="800" fill="currentColor">${pctN}</text></svg>` : `<svg class="bat-ic" width="25" height="13" viewBox="0 0 25 13" aria-hidden="true"><rect x=".75" y=".75" width="21" height="11.5" rx="3.4" fill="none" stroke="currentColor" stroke-opacity=".5" stroke-width="1.5"/><rect x="22.8" y="4.3" width="1.8" height="4.4" rx=".9" fill="currentColor" fill-opacity=".5"/><rect x="2.5" y="2.5" width="${(17.5 * battery.level).toFixed(1)}" height="8" rx="1.8" fill="${fill}"/>${bolt}</svg>`;
+      s.innerHTML = m === "inside" ? icon2(true) : m === "icon" ? icon2(false) : m === "both" ? `${pctN}% ${icon2(false)}` : `${pctN}%`;
+      s.setAttribute("aria-label", `Battery ${pctN}%${battery.charging ? ", charging" : ""}`);
+    }
     bus.on("settings", ({ patch }) => {
       if (patch.island || patch.viz) mode();
       if (patch.music) q(".isl-shuffle").setAttribute("aria-pressed", String(cfg.music.shuffle));
@@ -3713,8 +4437,18 @@ select.field { appearance: auto; padding: 0 10px; }
         row.append(b);
       });
     }
+    let hideT = 0;
     addEventListener("pointermove", (e) => {
-      if (cfg.dock.mode === "auto") dock.classList.toggle("revealed", e.clientY > innerHeight - 12 || dock.matches(":hover"));
+      if (cfg.dock.mode !== "auto") return;
+      const shown = dock.classList.contains("revealed"), reach = innerHeight - dock.offsetHeight - 50;
+      if (e.clientY > innerHeight - 12 || shown && (e.clientY > reach || dock.matches(":hover"))) {
+        clearTimeout(hideT);
+        hideT = 0;
+        if (!shown) dock.classList.add("revealed");
+      } else if (shown && !hideT) hideT = setTimeout(() => {
+        hideT = 0;
+        dock.classList.remove("revealed");
+      }, 450);
     }, { passive: true });
     let raf2 = 0, mx = null;
     dock.addEventListener("pointermove", (e) => {
@@ -3853,11 +4587,156 @@ select.field { appearance: auto; padding: 0 10px; }
     return b;
   }
 
+  // src/js/core/looks.js
+  init_settings();
+  var SKINS = [["glass", "Liquid Glass"], ["brutal", "Brutalist"], ["neon", "Neon"], ["paper", "Paper"], ["retro", "Retro OS"], ["clay", "Clay"], ["bare", "Bare"]];
+  var UI_FONTS = [["system", "System"], ["rounded", "Rounded"], ["serif", "Serif"], ["mono", "Mono"], ["condensed", "Condensed"]];
+  var hero = (o) => ({ hero: { color: "auto", font: "system", weight: "auto", plate: false, numerals: "four", align: "center", ...o } });
+  var LOOKS = [
+    {
+      id: "liquid",
+      name: "Liquid Glass",
+      sub: "Clear glass, columns, Dusk",
+      skin: "glass",
+      layoutMode: "columns",
+      accent: "auto",
+      uiFont: "system",
+      style: "clear",
+      wallpaper: { kind: "theme", theme: "dusk" },
+      ...hero({ style: "digital" }),
+      island: { mode: "island" }
+    },
+    {
+      id: "brutal",
+      name: "Brutalist",
+      sub: "Hard edges on Bauhaus shapes",
+      skin: "brutal",
+      layoutMode: "bento",
+      accent: "#ffd60a",
+      uiFont: "system",
+      style: "clear",
+      wallpaper: { kind: "theme", theme: "bauhaus" },
+      ...hero({ style: "outline", font: "mono", weight: 800, color: "#111111" }),
+      island: { mode: "bar" }
+    },
+    {
+      id: "cyber",
+      name: "Cyberpunk",
+      sub: "Neon panels, Outrun sunset",
+      skin: "neon",
+      layoutMode: "right",
+      accent: "#ff2bd6",
+      uiFont: "system",
+      style: "clear",
+      wallpaper: { kind: "theme", theme: "outrun" },
+      ...hero({ style: "neon", font: "condensed" }),
+      island: { mode: "island" }
+    },
+    {
+      id: "paper",
+      name: "Paper Desk",
+      sub: "Sticky notes along the bottom",
+      skin: "paper",
+      layoutMode: "row",
+      accent: "#e63946",
+      uiFont: "system",
+      style: "clear",
+      wallpaper: { kind: "color", colorA: "#efe3c8", colorB: "#c9b28f", gradStyle: "radial", gradFlow: false },
+      ...hero({ style: "words", font: "serif", color: "#3a2f25", align: "left" }),
+      island: { mode: "island" }
+    },
+    {
+      id: "retro",
+      name: "Retro OS",
+      sub: "Bevels, title bars, LCD clock",
+      skin: "retro",
+      layoutMode: "left",
+      accent: "#000080",
+      uiFont: "system",
+      style: "clear",
+      wallpaper: { kind: "color", colorA: "#008080", colorB: "#006a6a", gradStyle: "linear", gradAngle: 180, gradFlow: false },
+      ...hero({ style: "lcd" }),
+      island: { mode: "bar" }
+    },
+    {
+      id: "clay",
+      name: "Clay",
+      sub: "Soft and puffy on pastel",
+      skin: "clay",
+      layoutMode: "bento",
+      accent: "#7c5cff",
+      uiFont: "system",
+      style: "clear",
+      wallpaper: { kind: "theme", theme: "pastel" },
+      ...hero({ style: "rings", font: "rounded" }),
+      island: { mode: "island" }
+    },
+    {
+      id: "zen",
+      name: "Zen",
+      sub: "No panels, just type",
+      skin: "bare",
+      layoutMode: "row",
+      accent: "auto",
+      uiFont: "system",
+      style: "clear",
+      wallpaper: { kind: "theme", theme: "topo" },
+      ...hero({ style: "minimal", font: "system" }),
+      island: { mode: "auto" }
+    },
+    {
+      id: "space",
+      name: "Deep Space",
+      sub: "Tinted glass in a nebula",
+      skin: "glass",
+      layoutMode: "right",
+      accent: "#64d2ff",
+      uiFont: "system",
+      style: "tinted",
+      wallpaper: { kind: "theme", theme: "nebula" },
+      ...hero({ style: "analog", numerals: "none" }),
+      island: { mode: "island" }
+    },
+    {
+      id: "acid",
+      name: "Acid",
+      sub: "Flip clock on plasma",
+      skin: "neon",
+      layoutMode: "bento",
+      accent: "#c6ff00",
+      uiFont: "mono",
+      style: "clear",
+      wallpaper: { kind: "theme", theme: "acid" },
+      ...hero({ style: "flip", font: "mono" }),
+      island: { mode: "island" }
+    },
+    {
+      id: "lava",
+      name: "Lava Lamp",
+      sub: "Glass sidebar, warm blobs",
+      skin: "glass",
+      layoutMode: "left",
+      accent: "#ff9e00",
+      uiFont: "rounded",
+      style: "clear",
+      wallpaper: { kind: "theme", theme: "lava" },
+      ...hero({ style: "stacked", font: "rounded", align: "left" }),
+      island: { mode: "island" }
+    }
+  ];
+  function applyLook(id) {
+    const L = LOOKS.find((l) => l.id === id);
+    if (!L) return;
+    const { id: _, name, sub, ...patch } = L;
+    set("positions", {}, { silent: true });
+    update({ ...patch, look: id });
+  }
+
   // src/js/shell/settings-window.js
-  init_media();
   init_player();
   init_store();
   var SECTIONS = [
+    ["themes", "Themes", "#ff2d55"],
     ["widgets", "Widgets", "#0a84ff"],
     ["glass", "Glass", "#5e5ce6"],
     ["cards", "Cards", "#bf5af2"],
@@ -3878,10 +4757,43 @@ select.field { appearance: auto; padding: 0 10px; }
   var pct = (v) => Math.round(v * 100) + "%";
   var TITLED = ["world", "reminders", "notes", "focus", "system"];
   var COLORS = ["#ffffff", "#1d1d1f", "#ffd60a", "#ff9f0a", "#ff375f", "#bf5af2", "#5e5ce6", "#0a84ff", "#64d2ff", "#30d158"];
-  var GRADIENTS = [["#1f2a6b", "#e0707a"], ["#0f2027", "#2c5364"], ["#ff9a8b", "#ff6a88"], ["#355c7d", "#c06c84"], ["#11998e", "#38ef7d"], ["#232526", "#414345"], ["#fc5c7d", "#6a82fb"], ["#f7971e", "#ffd200"]];
+  var GRADIENTS = [
+    ["#1f2a6b", "#e0707a"],
+    ["#0f2027", "#2c5364"],
+    ["#ff9a8b", "#ff6a88"],
+    ["#355c7d", "#c06c84"],
+    ["#11998e", "#38ef7d"],
+    ["#232526", "#414345"],
+    ["#fc5c7d", "#6a82fb"],
+    ["#f7971e", "#ffd200"],
+    ["#8e2de2", "#4a00e0"],
+    ["#00c6ff", "#0072ff"],
+    ["#f953c6", "#b91d73"],
+    ["#a8e063", "#56ab2f"],
+    ["#ffecd2", "#fcb69f"],
+    ["#e0eafc", "#cfdef3"],
+    ["#141e30", "#243b55"],
+    ["#ee0979", "#ff6a00"]
+  ];
+  var ACCENTS = ["#0a84ff", "#5e5ce6", "#bf5af2", "#ff2d55", "#ff375f", "#ff9f0a", "#ffd60a", "#30d158", "#64d2ff", "#ff2bd6", "#c6ff00", "#111111"];
+  var CITIES = ["London", "New York", "Los Angeles", "Toronto", "São Paulo", "Paris", "Berlin", "Madrid", "Istanbul", "Dubai", "Karachi", "Lahore", "Islamabad", "Delhi", "Mumbai", "Singapore", "Tokyo", "Seoul", "Sydney", "Cairo", "Lagos", "Riyadh"];
+  var RESETS = {
+    themes: ["look", "skin", "layoutMode", "accent", "uiFont"],
+    widgets: ["widgets", "lockLayout", "positions"],
+    glass: ["glass", "style"],
+    cards: ["cards"],
+    wallpaper: ["wallpaper"],
+    island: ["island"],
+    dock: ["dock"],
+    clock: ["clock", "hero", "calendar", "cities"],
+    music: ["music"],
+    viz: ["viz"],
+    weather: ["city", "unit", "geo"],
+    access: ["reduce", "keyboard"]
+  };
   function initSettings({ resetLayout: resetLayout2 }) {
     const win = $("#settings"), side = $("#setSide"), main = $("#setMain");
-    let current_ = "widgets", trigger = null, cardSel = "music", clockTarget = "hero", cleanup = [];
+    let current_ = "themes", trigger = null, cardSel = "music", clockTarget = "hero", cleanup = [], cityResults = null, cityStatus = "";
     SECTIONS.forEach(([id, name, color]) => {
       const b = el("button", "set-nav");
       b.setAttribute("role", "tab");
@@ -4021,12 +4933,37 @@ select.field { appearance: auto; padding: 0 10px; }
       return b;
     };
     const WE2 = inWallpaperEngine;
+    const heroSpots = () => {
+      const g = el("div", "spots");
+      g.setAttribute("aria-label", "Clock position");
+      const cur = cfg.positions.hero;
+      ["tl", "tc", "tr", "ml", "mc", "mr", "bl", "bc", "br"].forEach((k) => {
+        const b = btn("", () => {
+          placeHeroAt(k);
+          g.querySelectorAll(".spot").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+        }, "spot");
+        b.setAttribute("aria-label", { t: "Top", m: "Middle", b: "Bottom" }[k[0]] + " " + { l: "left", c: "centre", r: "right" }[k[1]]);
+        b.setAttribute("aria-pressed", "false");
+        g.append(b);
+      });
+      const auto = btn("Auto", () => {
+        placeHeroAt("auto");
+        g.querySelectorAll(".spot").forEach((x) => x.setAttribute("aria-pressed", String(x === auto)));
+      }, "spot auto");
+      auto.setAttribute("aria-pressed", String(!cur));
+      g.append(auto);
+      return g;
+    };
     const views2 = {
       widgets() {
         main.append(group("On the desktop", WIDGETS.map(([id, name, sub]) => sw(name, `widgets.${id}`, sub))));
-        main.append(el("p", "group-note", "Drag any card to move it. It snaps to screen edges and to other cards, and stays where you leave it."));
+        main.append(group(
+          "Arrange",
+          [chipRow("Layout", "layoutMode", LAYOUTS2, "Where cards go until you drag them"), sw("Lock layout", "lockLayout", "Stops cards and the clock from being dragged by accident")],
+          "Drag any card to move it. It snaps to screen edges and to other cards, and stays where you leave it. Tidy up puts every card back into the layout."
+        ));
         const br = el("div", "btn-row");
-        br.append(btn("Reset layout", resetLayout2), btn("Customize a card", () => render("cards")));
+        br.append(btn("Tidy up", resetLayout2), btn("Customize a card", () => render("cards")));
         main.append(br);
       },
       glass() {
@@ -4134,7 +5071,7 @@ select.field { appearance: auto; padding: 0 10px; }
             const c = el("canvas");
             c.width = 160;
             c.height = 100;
-            drawWaves(c.getContext("2d"), 160, 100, t2, 0);
+            drawTheme(c.getContext("2d"), 160, 100, t2, 3);
             b.append(c, th.name);
             b.onclick = () => {
               S("wallpaper.theme", t2);
@@ -4143,49 +5080,72 @@ select.field { appearance: auto; padding: 0 10px; }
             walls.append(b);
           });
           main.append(el("div", "group-label", "Theme"), walls);
-          main.append(group("Motion", [sw("Animate", "wallpaper.motion"), rng2("Speed", "wallpaper.speed", 0.2, 3, 0.1, "×"), seg("Frame rate", "wallpaper.fps", [["30", "30"], ["60", "60"], ["120", "120"]]), sw("React to sound", "wallpaper.audioReactive", "Waves move with the music")]));
+          main.append(group("Motion", [sw("Animate", "wallpaper.motion"), rng2("Speed", "wallpaper.speed", 0.2, 3, 0.1, "×"), seg("Frame rate", "wallpaper.fps", [["30", "30"], ["60", "60"], ["120", "120"]]), sw("React to sound", "wallpaper.audioReactive", "Moves with the music")]));
         }
-        if (k === "image" || k === "gif" || k === "video") {
-          const name = k === "video" ? "Video" : k === "gif" ? "GIF" : "Image";
-          main.append(group("File", [
-            WE2() ? row(name, "Choose it in Wallpaper Engine’s properties panel") : row(
-              name,
-              wpMedia.main ? "A file is set" : "No file yet",
-              btn("Choose…", () => pickFile(k === "video" ? "video/*" : "image/*", false, async ([f]) => {
-                const kind = await setMainFile(f);
-                S("wallpaper.kind", kind);
-                render("wallpaper");
-              }))
-            ),
-            seg("Fit", "wallpaper.fit", [["cover", "Fill"], ["contain", "Fit"]])
-          ]));
+        if (k === "image" || k === "gif" || k === "video" || k === "slideshow") {
+          const type = k === "slideshow" ? "slides" : k, items = mediaItems(type), noun = { image: "images", gif: "GIFs", video: "videos", slides: "images" }[type];
+          const grid = el("div", "group media-grid");
+          const chosen = cfg.wallpaper.media, active = items.find((i) => i.id === chosen) || items[0];
+          items.forEach((it) => {
+            const t2 = el("div", "media-tile");
+            t2.setAttribute("role", k === "slideshow" ? "listitem" : "radio");
+            if (k !== "slideshow") {
+              t2.setAttribute("aria-checked", String(it === active));
+              t2.tabIndex = 0;
+              t2.onclick = () => {
+                update({ wallpaper: { media: it.id } }, SRC);
+                render("wallpaper", true);
+              };
+            }
+            const th = it.type === "video" ? Object.assign(el("video"), { muted: true, preload: "metadata", src: it.url + "#t=1" }) : Object.assign(el("img"), { src: it.url, alt: "", loading: "lazy" });
+            t2.append(th, el("span", "media-badge", it.type === "gif" ? "GIF" : it.type === "video" ? "Video" : it.source === "we" ? "Folder" : ""));
+            t2.title = it.name;
+            if (it.source === "local") {
+              const x = btn("✕", async (e) => {
+                e.stopPropagation();
+                await removeMedia(it.id);
+                render("wallpaper", true);
+              }, "media-del");
+              x.setAttribute("aria-label", "Remove " + it.name);
+              t2.append(x);
+            }
+            grid.append(t2);
+          });
+          if (!WE2()) {
+            const add = btn("", () => pickFile(k === "video" ? "video/*" : k === "gif" ? "image/gif" : "image/*", true, async (l) => {
+              const added = await addMedia(l);
+              const first = added.find((a) => type === "slides" ? a.type !== "video" : a.type === type);
+              if (first && k !== "slideshow") update({ wallpaper: { media: first.id } }, SRC);
+              render("wallpaper", true);
+            }), "media-tile add");
+            add.innerHTML = `<span>＋</span><small>Add ${noun}</small>`;
+            grid.append(add);
+          }
+          if (!items.length && WE2()) grid.append(el("p", "group-note", `No ${noun} yet.`));
+          main.append(el("div", "group-label", k === "slideshow" ? `Slideshow (${items.length} images)` : "Choose"), grid);
+          main.append(el("p", "group-note", WE2() ? "In Wallpaper Engine’s properties panel, choose a Wallpapers folder once. Every image, GIF and video in it shows up here." : "Files you add stay in this browser. You can also drop files anywhere on the desktop."));
+          main.append(group("Options", [k === "slideshow" && rng2("Change every", "wallpaper.slideEvery", 5, 600, 5, "s"), seg("Fit", "wallpaper.fit", [["cover", "Fill"], ["contain", "Fit"]])]));
         }
         if (k === "color") {
-          const pre = el("div", "chips");
+          const W2 = cfg.wallpaper, pre = el("div", "group grad-grid");
           GRADIENTS.forEach(([a, b]) => {
             const p = btn("", () => {
               update({ wallpaper: { colorA: a, colorB: b } }, SRC);
               render("wallpaper", true);
-            }, "grad");
-            p.style.background = `linear-gradient(160deg, ${a}, ${b})`;
+            }, "grad-tile");
+            p.style.background = gradient({ ...W2, colorA: a, colorB: b, gradFlow: false });
             p.setAttribute("aria-label", `Gradient ${a} to ${b}`);
+            p.setAttribute("aria-pressed", String(W2.colorA === a && W2.colorB === b));
             pre.append(p);
           });
-          main.append(group("Colours", [stack("Presets", null, pre), stack("From", null, swatches("From", "wallpaper.colorA", { colors: [.../* @__PURE__ */ new Set([...GRADIENTS.map((g) => g[0]), ...COLORS])].slice(0, 12) })), stack("To", null, swatches("To", "wallpaper.colorB", { colors: [.../* @__PURE__ */ new Set([...GRADIENTS.map((g) => g[1]), ...COLORS])].slice(0, 12) }))]));
+          main.append(el("div", "group-label", "Presets"), pre);
+          main.append(group("Style", [
+            seg("Shape", "wallpaper.gradStyle", [["linear", "Linear"], ["radial", "Radial"], ["mesh", "Mesh"], ["conic", "Conic"]], null, () => render("wallpaper", true)),
+            W2.gradStyle !== "radial" && rng2("Angle", "wallpaper.gradAngle", 0, 360, 5, "°"),
+            sw("Slow flow", "wallpaper.gradFlow", "The colours drift gently")
+          ]));
+          main.append(group("Colours", [stack("From", null, swatches("From", "wallpaper.colorA", { colors: [.../* @__PURE__ */ new Set([...GRADIENTS.map((g) => g[0]), ...COLORS])].slice(0, 14) })), stack("To", null, swatches("To", "wallpaper.colorB", { colors: [.../* @__PURE__ */ new Set([...GRADIENTS.map((g) => g[1]), ...COLORS])].slice(0, 14) }))]));
         }
-        if (k === "slideshow") main.append(group("Slideshow", [
-          WE2() ? row("Images", "Choose a slideshow folder in Wallpaper Engine’s properties panel") : row("Images", `${wpMedia.slides.length} added`, btn("Add images…", () => pickFile("image/*", true, async (l) => {
-            await addSlides(l);
-            bus.emit("wallpaper:media");
-            render("wallpaper");
-          }))),
-          !WE2() && row("Clear images", null, btn("Clear", async () => {
-            await clearSlides();
-            render("wallpaper");
-          })),
-          rng2("Change every", "wallpaper.slideEvery", 5, 600, 5, "s"),
-          seg("Fit", "wallpaper.fit", [["cover", "Fill"], ["contain", "Fit"]])
-        ]));
         main.append(group("Look", [rng2("Dim", "wallpaper.dim", 0, 0.8, 0.02, "", pct)]));
       },
       island() {
@@ -4193,13 +5153,20 @@ select.field { appearance: auto; padding: 0 10px; }
           "Top bar",
           [
             seg("Mode", "island.mode", [["island", "Island"], ["bar", "Full bar"], ["auto", "Auto-hide"], ["hidden", "Hidden"]]),
-            sw("Expand on hover", "island.expandOnHover", "Shows now playing and quick actions"),
-            sw("Show time", "island.showTime"),
-            sw("Show seconds", "island.seconds"),
-            sw("Show weather", "island.showWeather")
+            sw("Expand on hover", "island.expandOnHover", "Shows now playing and quick actions")
           ],
-          "Auto-hide slides the island in when the pointer touches the top edge. When hidden, right-click the desktop for menus. Time and date format are in Clock."
+          "Auto-hide slides the island in when the pointer touches the top edge. When hidden, right-click the desktop for menus."
         ));
+        main.append(group("Show in the island", [
+          sw("Time", "island.showTime"),
+          sw("Seconds", "island.seconds"),
+          sw("Weather", "island.showWeather"),
+          sw("Now playing", "island.showNowPlaying"),
+          sw("Network", "island.showNetwork"),
+          sw("Control Center button", "island.showCC"),
+          sw("Menu button (•••)", "island.showMenu", "Right-click the desktop for the same menu"),
+          seg("Battery", "island.battery", [["off", "Off"], ["percent", "87%"], ["icon", "Icon"], ["both", "Both"], ["inside", "In icon"]], "Desktop PCs without a battery report 100%")
+        ], "Time and date format are in Clock."));
       },
       dock() {
         main.append(group("Shortcut bar", [seg("Show", "dock.mode", [["hidden", "Hidden"], ["auto", "Auto-hide"], ["always", "Always"]])]));
@@ -4348,13 +5315,13 @@ select.field { appearance: auto; padding: 0 10px; }
             rng2("Opacity", "hero.opacity", 0.2, 1, 0.05, "", pct),
             rng2("Shadow", "hero.shadow", 0, 1, 0.05, "", pct),
             sw("Glass plate", "hero.plate", "Puts the clock on a pane of glass"),
-            seg("Align", "hero.align", [["left", "Left"], ["center", "Centre"], ["right", "Right"]]),
-            row("Position", "Drag the desktop clock to move it", btn("Centre it", () => U("positions.hero"), "pill small"))
+            seg("Text align", "hero.align", [["left", "Left"], ["center", "Centre"], ["right", "Right"]]),
+            stack("Position", "Or drag the clock anywhere", heroSpots())
           ]));
         } else if (clockTarget === "card") {
           main.append(group(
             "Clock card",
-            [sw("Show card", "widgets.clock"), ...styleRows("clock", [rng2("Size", "clock.size", 0.6, 1.6, 0.05, "×")])],
+            [sw("Show card", "widgets.clock"), ...styleRows("clock", [rng2("Size", "clock.size", 0.6, 1.6, 0.05, "×"), seg("Align", "clock.align", [["left", "Left"], ["center", "Centre"], ["right", "Right"]])])],
             cfg.widgets.clock ? "Glass, width and text colour are in Cards." : "The card is hidden; turn on Show card to see it on the desktop."
           ));
         } else {
@@ -4418,15 +5385,62 @@ select.field { appearance: auto; padding: 0 10px; }
         ]));
       },
       weather() {
+        const cur = cfg.geo && cfg.geo.name === cfg.city ? cfg.geo.label : cfg.city;
         const form = el("form", "row");
-        form.innerHTML = `<label class="label" for="cityIn">City</label><input class="field" id="cityIn" autocomplete="off" style="max-width:220px"><button class="pill" type="submit">Update</button>`;
-        form.querySelector("input").value = cfg.city;
-        form.onsubmit = (e) => {
+        const inp = el("input", "field");
+        inp.id = "cityIn";
+        inp.autocomplete = "off";
+        inp.placeholder = "Search a city";
+        inp.setAttribute("aria-label", "City");
+        form.append(el("span", "label", "Search"), inp, btn("Search", null));
+        form.lastChild.type = "submit";
+        form.onsubmit = async (e) => {
           e.preventDefault();
-          const v = form.querySelector("input").value.trim();
-          if (v) update({ city: v });
+          const q = inp.value.trim();
+          if (!q) return;
+          cityStatus = "Searching…";
+          cityResults = null;
+          render("weather", true);
+          try {
+            cityResults = await searchCities(q);
+            cityStatus = cityResults.length ? "" : `No city called “${q}”.`;
+          } catch {
+            cityStatus = "Search needs an internet connection.";
+          }
+          render("weather", true);
         };
-        main.append(group("Location", [form, seg("Units", "unit", [["c", "°C"], ["f", "°F"]])], WE2() ? "Wallpaper Engine doesn’t pass typing to wallpapers; set the city in its properties panel." : "Weather comes from Open-Meteo."));
+        const pick = (r) => {
+          cityResults = null;
+          cityStatus = "";
+          update({ city: r.name, geo: r }, SRC);
+          render("weather", true);
+        };
+        const results = el("div", "chips");
+        (cityResults || []).forEach((r) => {
+          const b = btn(r.label, () => pick(r), "chip");
+          results.append(b);
+        });
+        const locate = btn("Use my location", async () => {
+          cityStatus = "Finding you…";
+          render("weather", true);
+          try {
+            pick(await locateByIP());
+          } catch {
+            cityStatus = "Couldn’t detect a location. Search or pick a city instead.";
+            render("weather", true);
+          }
+        }, "pill small");
+        main.append(group("Location", [
+          row("Current", cur, locate),
+          form,
+          cityResults && cityResults.length ? stack("Results", "Pick the right one", results) : null,
+          cityStatus ? row(cityStatus) : null,
+          stack("Popular", null, chips("Popular cities", cfg.geo ? "" : cfg.city, CITIES.map((c) => [c, c]), (c) => {
+            update({ city: c, geo: null }, SRC);
+            render("weather", true);
+          })),
+          seg("Units", "unit", [["c", "°C"], ["f", "°F"]])
+        ], keyboardOn() ? "Click the search box and type with the on-screen keyboard." : "Weather comes from Open-Meteo. “Use my location” looks up your approximate city from your internet connection."));
       },
       data() {
         main.append(el("p", "group-note", "Everything saves automatically: layout, settings, reminders, notes, playlist files and wallpaper files. It stays after closing the browser or Wallpaper Engine and after a restart, as long as that app’s storage isn’t cleared. Keep a backup to be safe."));
@@ -4456,6 +5470,42 @@ select.field { appearance: auto; padding: 0 10px; }
       },
       access() {
         main.append(group("Display", [sw("Reduce transparency", "reduce", "Solid surfaces instead of glass")], "Animations also calm down when your system asks for reduced motion."));
+        main.append(group("Typing", [seg("On-screen keyboard", "keyboard", [["auto", "Auto"], ["on", "Always"], ["off", "Off"]], "Auto shows it in Wallpaper Engine, which doesn’t pass key presses to wallpapers")]));
+      },
+      themes() {
+        const looks = el("div", "looks");
+        LOOKS.forEach((L) => {
+          const b = el("button", "look-tile");
+          b.type = "button";
+          b.setAttribute("aria-pressed", String(cfg.look === L.id));
+          const pv = el("div", "look-pv");
+          pv.dataset.skin = L.skin;
+          pv.dataset.layout = L.layoutMode;
+          if (L.accent !== "auto") pv.style.setProperty("--accent", L.accent);
+          if (L.wallpaper.kind === "theme") {
+            const c = el("canvas");
+            c.width = 200;
+            c.height = 120;
+            drawTheme(c.getContext("2d"), 200, 120, L.wallpaper.theme, 3);
+            pv.append(c);
+          } else pv.style.background = gradient({ ...DEFAULTS.wallpaper, ...L.wallpaper });
+          const cards = el("div", "lp-cards");
+          for (let i = 0; i < 3; i++) cards.append(el("span", "lp-card"));
+          pv.append(el("span", "lp-clock", L.hero.style === "words" ? "four" : L.hero.style === "analog" ? "◷" : "9:41"), cards);
+          b.append(pv, el("b", null, L.name), el("small", null, L.sub));
+          b.onclick = () => {
+            applyLook(L.id);
+            render("themes", true);
+          };
+          looks.append(b);
+        });
+        main.append(el("div", "group-label", "Presets"), looks, el("p", "group-note", "A preset sets the surface style, layout, wallpaper, clock and accent together. Fine-tune anything afterwards."));
+        main.append(group("Mix your own", [
+          chipRow("Surface style", "skin", SKINS, "Liquid Glass refracts the wallpaper; the others are solid styles"),
+          chipRow("Layout", "layoutMode", LAYOUTS2, "Where cards go until you drag them"),
+          stack("Accent colour", "Calendar today, focus ring, switches, selections", swatches("Accent", "accent", { auto: true, colors: ACCENTS })),
+          chipRow("Interface font", "uiFont", UI_FONTS.map(([v, n]) => [v, n, "font-" + v]))
+        ]));
       }
     };
     function render(sec, keepScroll) {
@@ -4467,6 +5517,17 @@ select.field { appearance: auto; padding: 0 10px; }
       main.textContent = "";
       main.append(el("h3", null, SECTIONS.find((s) => s[0] === current_)[1]));
       views2[current_]();
+      const keys = RESETS[current_];
+      if (keys) {
+        const name = SECTIONS.find((x) => x[0] === current_)[1];
+        const br = el("div", "btn-row tab-reset");
+        br.append(confirmBtn(`Reset ${name}`, "Click again to reset", () => {
+          keys.forEach((k) => S(k, structuredClone(DEFAULTS[k])));
+          if (current_ === "music") setIncludeBuiltin(true);
+          render(current_, true);
+        }));
+        main.append(br);
+      }
       main.scrollTop = keepScroll ? scroll : 0;
     }
     function open2(sec, from, card) {
@@ -4518,7 +5579,7 @@ select.field { appearance: auto; padding: 0 10px; }
   };
   attach($("#vizCard"), {});
   attach($("#edgeViz"), { align: "bottom" });
-  var hero = clockFace($("#heroFace"), heroClockOpts);
+  var hero2 = clockFace($("#heroFace"), heroClockOpts);
   var settings = initSettings({ resetLayout });
   var cc = initControlCenter();
   var openSettings = (sec, from, card) => {
@@ -4552,12 +5613,14 @@ select.field { appearance: auto; padding: 0 10px; }
       { label: "Shortcut Bar", checked: cfg.dock.mode !== "hidden", action: () => set("dock.mode", cfg.dock.mode === "hidden" ? "always" : "hidden") },
       { label: "Desktop Clock", checked: cfg.hero.show, action: () => set("hero.show", !cfg.hero.show) },
       "-",
-      { label: "Reset Layout", action: resetLayout }
+      { label: "Lock Layout", checked: cfg.lockLayout, action: () => set("lockLayout", !cfg.lockLayout) },
+      { label: "Tidy Up Layout", action: resetLayout }
     ], at, "Desktop");
   }
   var island = initIsland({ openMenu: mainMenu, openSettings, toggleCC: (from) => cc.toggle(from) });
   initDock(actions);
   enableDragging();
+  initKeyboard();
   addEventListener("contextmenu", (e) => {
     if (e.target.closest("input, textarea, .menu, #settings, #cc")) return;
     e.preventDefault();
@@ -4597,9 +5660,8 @@ select.field { appearance: auto; padding: 0 10px; }
     if (!fl.length) return;
     const media = fl.find((f) => /^(image|video)\//.test(f.type));
     if (media) {
-      const { setMainFile: setMainFile2 } = await Promise.resolve().then(() => (init_media(), media_exports));
-      const kind = await setMainFile2(media);
-      set("wallpaper.kind", kind);
+      const [it] = await addMedia(fl.filter((f) => /^(image|video)\//.test(f.type)));
+      if (it) update({ wallpaper: { kind: it.type, media: it.id } });
     }
     if (fl.some((f) => f.type.startsWith("audio/"))) {
       const { addFiles: addFiles2 } = await Promise.resolve().then(() => (init_player(), player_exports));
@@ -4637,6 +5699,7 @@ select.field { appearance: auto; padding: 0 10px; }
       prop("--card-pad", c.pad != null ? c.pad + "px" : null);
     });
   }
+  var lastKind = "";
   function applyWallpaper() {
     const w = cfg.wallpaper, root = document.documentElement;
     const th = THEMES[w.theme] || THEMES.dusk;
@@ -4644,15 +5707,36 @@ select.field { appearance: auto; padding: 0 10px; }
     root.style.setProperty("--page", w.kind === "theme" ? th.bg : "#111");
     root.style.setProperty("--hero-ink", w.kind === "theme" ? th.hero : "#fff");
     wall.set({ ...w, motion: w.motion && !reducedMotion() });
-    if (w.kind === "image" || w.kind === "gif") wall.media("image", wpMedia.main && !wpMedia.mainType.startsWith("video") ? wpMedia.main : wpMedia.we.image);
-    if (w.kind === "video") wall.media("video", wpMedia.main && wpMedia.mainType.startsWith("video") ? wpMedia.main : wpMedia.we.video);
-    if (w.kind === "slideshow") wall.setSlides(wpMedia.slides.length ? wpMedia.slides : wpMedia.we.folder);
+    const pick = (type) => {
+      const it = findMedia(w.media);
+      if (it && it.type === type) return it.url;
+      const first = mediaItems(type)[0];
+      return first ? first.url : "";
+    };
+    if (w.kind === "image" || w.kind === "gif") wall.media("image", pick(w.kind));
+    if (w.kind === "video") wall.media("video", pick("video"));
+    if (w.kind === "slideshow") {
+      const slides = mediaItems("slides").map((i) => i.url);
+      if (slides.join() !== wall.slides.join() || lastKind !== "slideshow") wall.setSlides(slides);
+    }
+    lastKind = w.kind;
     $("#dim").style.opacity = String(w.dim);
   }
   function applyMisc() {
     const root = document.documentElement;
     root.dataset.style = cfg.style;
     root.dataset.reduce = String(cfg.reduce);
+    root.dataset.skin = cfg.skin || "glass";
+    if (cfg.uiFont && cfg.uiFont !== "system") root.dataset.uifont = cfg.uiFont;
+    else delete root.dataset.uifont;
+    if (cfg.accent && cfg.accent !== "auto") {
+      const [r, g, b] = [1, 3, 5].map((i) => parseInt(cfg.accent.slice(i, i + 2), 16) / 255);
+      root.style.setProperty("--accent", cfg.accent);
+      root.style.setProperty("--on-accent", 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.6 ? "#111" : "#fff");
+    } else {
+      root.style.removeProperty("--accent");
+      root.style.removeProperty("--on-accent");
+    }
     const h = $("#hero"), hc = cfg.hero;
     h.hidden = !hc.show;
     h.classList.toggle("plate", !!hc.plate);
@@ -4686,14 +5770,18 @@ select.field { appearance: auto; padding: 0 10px; }
   bus.on("settings", ({ patch }) => {
     if (patch.glass || "reduce" in patch || patch.cards) applyGlass();
     if (patch.wallpaper) applyWallpaper();
-    if (patch.hero || patch.viz || "style" in patch || "reduce" in patch) {
+    if (patch.hero || patch.viz || "style" in patch || "reduce" in patch || "skin" in patch || "accent" in patch || "uiFont" in patch) {
       applyMisc();
       tick(true);
       requestAnimationFrame(heroRefresh);
     }
     if (patch.widgets) syncWidgets();
     if (patch.cards || patch.dock) layout({ animate: true });
-    if (patch.positions) layout({ animate: true });
+    if (patch.positions || "layoutMode" in patch) layout({ animate: true });
+    if ("skin" in patch || "uiFont" in patch) requestAnimationFrame(() => {
+      layout({ animate: true });
+      refresh();
+    });
     if (patch.clock) {
       tick(true);
       W.world.render();
@@ -4734,7 +5822,7 @@ select.field { appearance: auto; padding: 0 10px; }
     clockseconds: (v) => ({ hero: { seconds: !!v } }),
     clockplate: (v) => ({ hero: { plate: !!v } }),
     clock24: (v) => ({ clock: { h24: !!v } }),
-    city: (v) => ({ city: String(v || "London") }),
+    city: (v) => ({ city: String(v || "London"), geo: null }),
     units: (v) => ({ unit: v }),
     musicsource: (v) => ({ music: { source: v } }),
     reducetransparency: (v) => ({ reduce: !!v })
@@ -4751,10 +5839,10 @@ select.field { appearance: auto; padding: 0 10px; }
       else if (k.startsWith("show") && k.slice(4) in cfg.widgets) merge2(patch, { widgets: { [k.slice(4)]: !!v } });
       else if (k === "customimage") {
         wpMedia.we.image = v ? "file:///" + v : "";
-        if (v) merge2(patch, { wallpaper: { kind: /\.gif$/i.test(v) ? "gif" : "image" } });
+        if (v) merge2(patch, { wallpaper: { kind: /\.gif$/i.test(v) ? "gif" : "image", media: "we:image" } });
       } else if (k === "customvideo") {
         wpMedia.we.video = v ? "file:///" + v : "";
-        if (v) merge2(patch, { wallpaper: { kind: "video" } });
+        if (v) merge2(patch, { wallpaper: { kind: "video", media: "we:video" } });
       } else if (k === "reminders") bus.emit("reminders:set", v);
       else if (k === "notes") {
         if (v || cfg.weLast.notes) bus.emit("notes:set", String(v || ""));
@@ -4767,11 +5855,8 @@ select.field { appearance: auto; padding: 0 10px; }
     applyWallpaper();
   });
   bus.on("we:dir", ({ name, files: files2 }) => {
-    if (name === "musicfolder") setWEFolder(files2);
-    if (name === "wallpaperfolder") {
-      wpMedia.we.folder = files2.filter((f) => /\.(jpe?g|png|webp|gif|bmp)$/i.test(f)).map((f) => "file:///" + f);
-      applyWallpaper();
-    }
+    if (name === "musicfolder") setWEFolder2(files2);
+    if (name === "wallpaperfolder") setWEFolder(files2);
   });
   bus.on("we:fps", (fps) => set("wallpaper.fps", Math.max(10, Math.min(144, fps)), { silent: true }));
   bus.on("we:paused", (p) => {
@@ -4783,7 +5868,7 @@ select.field { appearance: auto; padding: 0 10px; }
   function tick(force) {
     const now = /* @__PURE__ */ new Date();
     if (cfg.widgets.clock) W.clock.tick(now);
-    if (cfg.hero.show) hero.tick(now);
+    if (cfg.hero.show) hero2.tick(now);
     island.tick(now);
     W.focus.tick();
     if (force || now.getMinutes() !== lastMin) {

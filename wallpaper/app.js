@@ -184,8 +184,8 @@
         cards: {},
         // id -> per-card overrides {blur, sat, bright, tint, radius, rim, shine, refraction, width}
         glass: { blur: 14, sat: 180, bright: 1, tint: 0.06, radius: 26, rim: 0.45, shine: 0.5, refraction: 1, quality: "balanced", react: "near", reactRadius: 220, shadow: 0.24 },
-        wallpaper: { kind: "theme", theme: "dusk", motion: true, speed: 1, fps: 60, colorA: "#1f2a6b", colorB: "#e0707a", fit: "cover", slideEvery: 60, dim: 0, audioReactive: true },
-        island: { mode: "island", expandOnHover: true, showTime: true, showWeather: true, seconds: false },
+        wallpaper: { kind: "theme", theme: "dusk", motion: true, speed: 1, fps: 60, colorA: "#1f2a6b", colorB: "#e0707a", gradStyle: "linear", gradAngle: 160, gradFlow: false, fit: "cover", slideEvery: 60, dim: 0, audioReactive: true, media: "" },
+        island: { mode: "island", expandOnHover: true, showTime: true, showWeather: true, seconds: false, battery: "percent", showNetwork: true, showNowPlaying: true, showCC: true, showMenu: true },
         dock: { mode: "hidden", shortcuts: [
           { id: "s1", name: "Settings", kind: "action", target: "settings", icon: "gear" },
           { id: "s2", name: "Edit layout", kind: "action", target: "edit", icon: "grid" },
@@ -203,17 +203,31 @@
           leadingZero: false,
           ampm: true,
           blink: false,
-          dateFormat: "long"
+          dateFormat: "long",
+          align: "left"
         },
         hero: { show: true, style: "digital", size: 1, date: true, weight: "auto", seconds: false, font: "system", numerals: "four", color: "auto", opacity: 1, shadow: 0.25, plate: false, align: "center" },
         calendar: { weekStart: 0 },
         music: { source: "auto", repeat: "all", shuffle: false, continuous: true, volume: 0.8, order: [] },
         viz: { card: true, island: true, edge: false, style: "bars", color: "ink", sensitivity: 1, bars: 48, edgeHeight: 90 },
         style: "clear",
+        look: "liquid",
+        // last preset applied in Settings › Themes
+        skin: "glass",
+        // surface style: glass, brutal, neon, paper, retro, clay
+        layoutMode: "columns",
+        // where cards flow: columns, left, right, bento, row
+        lockLayout: false,
+        accent: "auto",
+        uiFont: "system",
+        keyboard: "auto",
+        // on-screen keyboard: auto (Wallpaper Engine), on, off
         reduce: false,
         focusMode: false,
         city: "London",
         unit: "c",
+        geo: null,
+        // geo: {name, latitude, longitude, label} when picked from search
         cities: ["Europe/London", "America/New_York", "Asia/Tokyo"],
         weLast: {},
         // last values seen from Wallpaper Engine's properties
@@ -270,54 +284,6 @@
         all: () => tx("readonly", (s) => s.getAll()).catch(() => []),
         del: (id) => tx("readwrite", (s) => s.delete(id)).catch(() => null)
       };
-    }
-  });
-
-  // src/js/wallpaper/media.js
-  var media_exports = {};
-  __export(media_exports, {
-    addSlides: () => addSlides,
-    clearSlides: () => clearSlides,
-    loadWallpaperMedia: () => loadWallpaperMedia,
-    setMainFile: () => setMainFile,
-    wpMedia: () => wpMedia
-  });
-  async function loadWallpaperMedia() {
-    const all = await files.all();
-    const main = all.find((r) => r.id === "wp:main");
-    if (main) {
-      wpMedia.main = url(main);
-      wpMedia.mainType = main.mime || "";
-    }
-    wpMedia.slides = all.filter((r) => r.id.startsWith("wp:slide:")).sort((a, b) => a.added - b.added).map(url);
-    bus.emit("wallpaper:media");
-  }
-  async function setMainFile(f) {
-    await files.put({ id: "wp:main", type: "wallpaper", mime: f.type, name: f.name, blob: f, added: Date.now() });
-    urls.delete("wp:main");
-    await loadWallpaperMedia();
-    return f.type.startsWith("video/") ? "video" : f.type === "image/gif" ? "gif" : "image";
-  }
-  async function addSlides(list2) {
-    for (const f of list2) if (f.type.startsWith("image/")) await files.put({ id: "wp:slide:" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), type: "wallpaper", mime: f.type, name: f.name, blob: f, added: Date.now() });
-    await loadWallpaperMedia();
-  }
-  async function clearSlides() {
-    for (const r of await files.all()) if (r.id.startsWith("wp:slide:")) await files.del(r.id);
-    urls.clear();
-    await loadWallpaperMedia();
-  }
-  var urls, url, wpMedia;
-  var init_media = __esm({
-    "src/js/wallpaper/media.js"() {
-      init_idb();
-      init_bus();
-      urls = /* @__PURE__ */ new Map();
-      url = (rec) => {
-        if (!urls.has(rec.id)) urls.set(rec.id, URL.createObjectURL(rec.blob));
-        return urls.get(rec.id);
-      };
-      wpMedia = { main: null, mainType: "", slides: [], we: { image: "", video: "", folder: [] } };
     }
   });
 
@@ -889,7 +855,7 @@
     player: () => player,
     removeTrack: () => removeTrack,
     setIncludeBuiltin: () => setIncludeBuiltin,
-    setWEFolder: () => setWEFolder
+    setWEFolder: () => setWEFolder2
   });
   function wireAudio() {
     engine.ensure();
@@ -961,7 +927,7 @@
     bus.emit("playlist");
     emit2();
   }
-  function setWEFolder(paths) {
+  function setWEFolder2(paths) {
     weFolder = paths.filter((p) => /\.(mp3|m4a|aac|wav|ogg|flac|opus)$/i.test(p)).map((p) => {
       const name = p.split(/[\\/]/).pop();
       return { id: "we:" + p, kind: "file", ...split(name), src: "file:///" + p };
@@ -1420,17 +1386,25 @@
 
   // src/js/wallpaper/themes.js
   var THEMES = {
-    dusk: { name: "Dusk", glass: "dark", bg: "#141a45", bands: ["#1f2a6b", "#34389a", "#5b45b0", "#9a55a8", "#e0707a", "#ffad86"], sun: "#ffcf9e", amp: 0.07, tilt: -0.05, hero: "#ffffff" },
-    lagoon: { name: "Lagoon", glass: "light", bg: "#eaf6f3", bands: ["#cdeee8", "#a3dfd9", "#6fc8c6", "#3aa9b0", "#178795", "#0c5f70"], sun: null, amp: 0.05, tilt: 0.04, hero: "#0c3f4a" },
-    ember: { name: "Ember", glass: "dark", bg: "#22081a", bands: ["#43102b", "#6f1736", "#a32437", "#d24d2f", "#f08a35", "#fbc65a"], sun: "#ffd27a", amp: 0.09, tilt: 0.03, hero: "#ffffff" },
-    mist: { name: "Mist", glass: "light", bg: "#f4f2f8", bands: ["#e6e2f2", "#d4cdea", "#bdb3df", "#a397cf", "#8679bd", "#6b5ea6"], sun: null, amp: 0.06, tilt: -0.03, hero: "#2c2452" },
-    aurora: { name: "Aurora", glass: "dark", bg: "#04121c", bands: ["#062a3a", "#0a4150", "#0e5d63", "#147a70", "#1f9a7c", "#33b388"], sun: null, amp: 0.11, tilt: 0.06, hero: "#e9fff4" },
-    image: { name: "Your image", glass: "dark", bg: "#111", bands: [], sun: null, amp: 0, tilt: 0, hero: "#ffffff" }
+    dusk: { name: "Dusk", style: "waves", glass: "dark", bg: "#141a45", bands: ["#1f2a6b", "#34389a", "#5b45b0", "#9a55a8", "#e0707a", "#ffad86"], sun: "#ffcf9e", amp: 0.07, tilt: -0.05, hero: "#ffffff" },
+    lagoon: { name: "Lagoon", style: "waves", glass: "light", bg: "#eaf6f3", bands: ["#cdeee8", "#a3dfd9", "#6fc8c6", "#3aa9b0", "#178795", "#0c5f70"], sun: null, amp: 0.05, tilt: 0.04, hero: "#0c3f4a" },
+    ember: { name: "Ember", style: "waves", glass: "dark", bg: "#22081a", bands: ["#43102b", "#6f1736", "#a32437", "#d24d2f", "#f08a35", "#fbc65a"], sun: "#ffd27a", amp: 0.09, tilt: 0.03, hero: "#ffffff" },
+    mist: { name: "Mist", style: "waves", glass: "light", bg: "#f4f2f8", bands: ["#e6e2f2", "#d4cdea", "#bdb3df", "#a397cf", "#8679bd", "#6b5ea6"], sun: null, amp: 0.06, tilt: -0.03, hero: "#2c2452" },
+    aurora: { name: "Aurora", style: "waves", glass: "dark", bg: "#04121c", bands: ["#062a3a", "#0a4150", "#0e5d63", "#147a70", "#1f9a7c", "#33b388"], sun: null, amp: 0.11, tilt: 0.06, hero: "#e9fff4" },
+    lava: { name: "Lava Lamp", style: "blobs", glass: "dark", bg: "#160433", colors: ["#ff4d6d", "#ff9e00", "#7b2cbf", "#3a0ca3", "#f72585"], hero: "#ffffff" },
+    pastel: { name: "Pastel", style: "blobs", glass: "light", bg: "#fbf4ff", colors: ["#ffc8dd", "#bde0fe", "#cdb4db", "#a2d2ff", "#fff1a8"], hero: "#3d2c5c" },
+    outrun: { name: "Outrun", style: "synth", glass: "dark", bg: "#12002b", sky: ["#12002b", "#5a0f6e", "#ff2bd6"], sunA: "#ffe25c", sunB: "#ff2b8a", grid: "#ff2bd6", ground: "#0b0018", hero: "#fff2fb" },
+    nebula: { name: "Nebula", style: "stars", glass: "dark", bg: "#03010d", colors: ["#5b2a86", "#1b4b8f", "#a3195b"], hero: "#ffffff" },
+    bauhaus: { name: "Bauhaus", style: "bauhaus", glass: "light", bg: "#f1e9d6", colors: ["#e63946", "#1d3557", "#f4a261", "#2a9d8f", "#111111"], hero: "#111111" },
+    topo: { name: "Topography", style: "contour", glass: "dark", bg: "#0d2520", line: "#3ddc97", hero: "#e8fff5" },
+    acid: { name: "Acid", style: "plasma", glass: "dark", bg: "#000000", hue: 280, hero: "#ffffff" },
+    image: { name: "Your image", style: "none", glass: "dark", bg: "#111", hero: "#ffffff" }
   };
 
   // src/js/wallpaper/wallpaper.js
-  function drawWaves(ctx, W2, H, key, t2 = 0, energy = 0) {
-    const w = THEMES[key] || THEMES.dusk;
+  init_util();
+  var TAU = Math.PI * 2;
+  function waves(ctx, W2, H, w, t2, energy) {
     ctx.fillStyle = w.bg;
     ctx.fillRect(0, 0, W2, H);
     if (w.sun) {
@@ -1456,6 +1430,198 @@
       ctx.fillStyle = col;
       ctx.fill();
     });
+  }
+  function blobs(ctx, W2, H, w, t2, energy) {
+    ctx.fillStyle = w.bg;
+    ctx.fillRect(0, 0, W2, H);
+    const m = Math.max(W2, H), light2 = w.glass === "light";
+    w.colors.forEach((c, i) => {
+      const x = W2 * (0.5 + 0.38 * Math.sin(t2 * (0.11 + i * 0.03) + i * 2.1)), y = H * (0.5 + 0.36 * Math.cos(t2 * (0.09 + i * 0.025) + i * 1.3));
+      const r = m * (0.34 + 0.08 * Math.sin(t2 * 0.2 + i) + energy * 0.08);
+      const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+      g.addColorStop(0, c);
+      g.addColorStop(1, c + "00");
+      ctx.globalAlpha = light2 ? 0.85 : 0.9;
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, W2, H);
+    });
+    ctx.globalAlpha = 1;
+  }
+  function synth(ctx, W2, H, w, t2, energy) {
+    const hz = H * 0.62, sky = ctx.createLinearGradient(0, 0, 0, hz);
+    w.sky.forEach((c, i) => sky.addColorStop(i / (w.sky.length - 1), c));
+    ctx.fillStyle = sky;
+    ctx.fillRect(0, 0, W2, hz);
+    const R = Math.min(W2, H) * 0.24 * (1 + energy * 0.05), cx = W2 / 2, cy = hz - R * 0.32;
+    const sun = ctx.createLinearGradient(0, cy - R, 0, cy + R);
+    sun.addColorStop(0, w.sunA);
+    sun.addColorStop(1, w.sunB);
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(cx, cy, R, 0, TAU);
+    ctx.clip();
+    ctx.fillStyle = sun;
+    ctx.fillRect(cx - R, cy - R, R * 2, R * 2);
+    ctx.fillStyle = w.sky[1];
+    for (let i = 0; i < 7; i++) {
+      const yy = cy + R * (0.05 + i * 0.14), hh = R * (0.02 + i * 0.016);
+      ctx.fillRect(cx - R, yy, R * 2, hh);
+    }
+    ctx.restore();
+    ctx.fillStyle = w.ground;
+    ctx.fillRect(0, hz, W2, H - hz);
+    ctx.strokeStyle = w.grid;
+    ctx.lineWidth = Math.max(1, H / 500);
+    ctx.shadowColor = w.grid;
+    ctx.shadowBlur = 8 + energy * 14;
+    ctx.globalAlpha = 0.75 + energy * 0.25;
+    ctx.beginPath();
+    for (let i = -24; i <= 24; i++) {
+      ctx.moveTo(cx + i * W2 * 0.012, hz);
+      ctx.lineTo(cx + i * W2 * 0.11, H);
+    }
+    const N2 = 14, ph = t2 * 0.6 % 1;
+    for (let k = 0; k < N2; k++) {
+      const f = (k + ph) / N2, y = hz + (H - hz) * f * f;
+      ctx.moveTo(0, y);
+      ctx.lineTo(W2, y);
+    }
+    ctx.moveTo(0, hz);
+    ctx.lineTo(W2, hz);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha = 1;
+  }
+  var starCache = /* @__PURE__ */ new Map();
+  function stars(ctx, W2, H, w, t2, energy) {
+    ctx.fillStyle = w.bg;
+    ctx.fillRect(0, 0, W2, H);
+    const m = Math.max(W2, H);
+    w.colors.forEach((c, i) => {
+      const x = W2 * (0.3 + 0.4 * (i * 0.37 % 1) + 0.04 * Math.sin(t2 * 0.05 + i)), y = H * (0.3 + 0.4 * (i * 0.61 % 1) + 0.04 * Math.cos(t2 * 0.04 + i));
+      const g = ctx.createRadialGradient(x, y, 0, x, y, m * 0.45);
+      g.addColorStop(0, c + "aa");
+      g.addColorStop(1, c + "00");
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, W2, H);
+    });
+    const key = 260;
+    if (!starCache.has(key)) {
+      const r = rng(42);
+      starCache.set(key, [...Array(key)].map(() => [r(), r(), r(), r() * TAU]));
+    }
+    ctx.fillStyle = "#fff";
+    starCache.get(key).forEach(([x, y, z, p]) => {
+      const px2 = (x + t2 * 4e-3 * (0.3 + z)) % 1 * W2, py2 = y * H;
+      ctx.globalAlpha = Math.min(1, (0.35 + 0.65 * Math.abs(Math.sin(t2 * (0.6 + z) + p))) * (0.5 + z * 0.5) + energy * 0.3);
+      ctx.fillRect(px2, py2, 0.6 + z * 1.6, 0.6 + z * 1.6);
+    });
+    ctx.globalAlpha = 1;
+  }
+  function bauhaus(ctx, W2, H, w, t2, energy) {
+    ctx.fillStyle = w.bg;
+    ctx.fillRect(0, 0, W2, H);
+    const cols = W2 > H ? 5 : 3, rows = Math.ceil(H / (W2 / cols)), s = W2 / cols, r = rng(7);
+    for (let j = 0; j < rows; j++) for (let i = 0; i < cols; i++) {
+      const kind = Math.floor(r() * 5), c = w.colors[Math.floor(r() * w.colors.length)], c2 = w.colors[Math.floor(r() * w.colors.length)], dir = r() < 0.5 ? -1 : 1;
+      const x = i * s + s / 2, y = j * s + s / 2, rot = Math.round(r() * 4) * Math.PI / 2 + Math.sin(t2 * 0.25 + i + j) * 0.5 * dir;
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(rot);
+      ctx.scale(1 + energy * 0.06, 1 + energy * 0.06);
+      ctx.fillStyle = c;
+      const h = s * 0.42;
+      if (kind === 0) {
+        ctx.beginPath();
+        ctx.arc(0, 0, h, 0, TAU);
+        ctx.fill();
+        ctx.fillStyle = c2;
+        ctx.beginPath();
+        ctx.arc(0, 0, h * 0.45, 0, TAU);
+        ctx.fill();
+      } else if (kind === 1) {
+        ctx.beginPath();
+        ctx.arc(0, h * 0.4, h, Math.PI, TAU);
+        ctx.fill();
+      } else if (kind === 2) {
+        ctx.beginPath();
+        ctx.moveTo(-h, -h);
+        ctx.arc(-h, -h, h * 2, 0, Math.PI / 2);
+        ctx.closePath();
+        ctx.fill();
+      } else if (kind === 3) {
+        ctx.fillRect(-h, -h * 0.35, h * 2, h * 0.7);
+        ctx.fillStyle = c2;
+        ctx.fillRect(-h * 0.35, -h, h * 0.7, h * 2);
+      } else {
+        ctx.beginPath();
+        ctx.moveTo(0, -h);
+        ctx.lineTo(h, h);
+        ctx.lineTo(-h, h);
+        ctx.closePath();
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+  }
+  function contour(ctx, W2, H, w, t2, energy) {
+    ctx.fillStyle = w.bg;
+    ctx.fillRect(0, 0, W2, H);
+    ctx.strokeStyle = w.line;
+    ctx.lineWidth = Math.max(1, H / 700);
+    const m = Math.max(W2, H), centers = [[0.28, 0.4, 1], [0.76, 0.66, 1.4]];
+    centers.forEach(([cx, cy, k], ci) => {
+      for (let ring2 = 1; ring2 <= 18; ring2++) {
+        const base = ring2 * m * 0.03 * k;
+        ctx.globalAlpha = (0.15 + 0.5 * (1 - ring2 / 18)) * (0.8 + energy * 0.4);
+        ctx.beginPath();
+        for (let a = 0; a <= 96; a++) {
+          const ang = a / 96 * TAU, rr = base * (1 + 0.13 * Math.sin(ang * 3 + t2 * 0.3 + ring2 * 0.35 + ci) + 0.06 * Math.sin(ang * 7 - t2 * 0.22 + ring2 * 0.2));
+          const x = cx * W2 + Math.cos(ang) * rr, y = cy * H + Math.sin(ang) * rr * 0.8;
+          a ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+        }
+        ctx.stroke();
+      }
+    });
+    ctx.globalAlpha = 1;
+  }
+  var plasmaCv = typeof document !== "undefined" ? document.createElement("canvas") : null;
+  function plasma(ctx, W2, H, w, t2, energy) {
+    const pw = 96, ph = Math.max(24, Math.round(96 * H / W2));
+    plasmaCv.width = pw;
+    plasmaCv.height = ph;
+    const p = plasmaCv.getContext("2d"), img = p.createImageData(pw, ph), d = img.data;
+    for (let y = 0; y < ph; y++) for (let x = 0; x < pw; x++) {
+      const v = Math.sin(x * 0.07 + t2) + Math.sin(y * 0.09 - t2 * 0.7) + Math.sin((x + y) * 0.05 + t2 * 0.5) + Math.sin(Math.hypot(x - pw / 2, y - ph / 2) * 0.12 - t2);
+      const hue = (w.hue + v * 50 + t2 * 12) % 360, l = 0.45 + 0.1 * Math.sin(v * 2) + energy * 0.08;
+      const [r, g, b] = hsl(hue / 360, 0.85, l), i = (y * pw + x) * 4;
+      d[i] = r;
+      d[i + 1] = g;
+      d[i + 2] = b;
+      d[i + 3] = 255;
+    }
+    p.putImageData(img, 0, 0);
+    ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(plasmaCv, 0, 0, W2, H);
+  }
+  function hsl(h, s, l) {
+    const q = l < 0.5 ? l * (1 + s) : l + s - l * s, p = 2 * l - q;
+    const f = (t2) => {
+      t2 = (t2 + 1) % 1;
+      return 255 * (t2 < 1 / 6 ? p + (q - p) * 6 * t2 : t2 < 0.5 ? q : t2 < 2 / 3 ? p + (q - p) * (2 / 3 - t2) * 6 : p);
+    };
+    return [f(h + 1 / 3), f(h), f(h - 1 / 3)];
+  }
+  function gradient({ colorA: a, colorB: b, gradStyle = "linear", gradAngle = 160, gradFlow = false }) {
+    if (gradStyle === "radial") return `radial-gradient(circle at 30% 25%, ${a}, ${b} 75%)`;
+    if (gradStyle === "conic") return `conic-gradient(from ${gradAngle}deg at 50% 50%, ${a}, ${b}, ${a})`;
+    if (gradStyle === "mesh") return `radial-gradient(at 15% 20%, ${a} 0, transparent 55%), radial-gradient(at 85% 15%, ${b} 0, transparent 50%), radial-gradient(at 70% 85%, ${a} 0, transparent 55%), radial-gradient(at 20% 90%, ${b} 0, transparent 55%), linear-gradient(${gradAngle}deg, ${a}, ${b})`;
+    return `linear-gradient(${gradAngle}deg, ${a}, ${b}${gradFlow ? ", " + a : ""})`;
+  }
+  var STYLES = { waves, blobs, synth, stars, bauhaus, contour, plasma };
+  function drawTheme(ctx, W2, H, key, t2 = 0, energy = 0) {
+    const w = THEMES[key] || THEMES.dusk;
+    (STYLES[w.style] || waves)(ctx, W2, H, w, t2, energy);
   }
   var Wallpaper = class {
     constructor(root) {
@@ -1498,7 +1664,8 @@
         this.video.pause();
       }
       [this.img, this.img2, this.video].forEach((e) => e.style.objectFit = this.o.fit);
-      this.root.style.background = k === "color" ? `linear-gradient(160deg, ${this.o.colorA}, ${this.o.colorB})` : "";
+      this.root.style.background = k === "color" ? gradient(this.o) : "";
+      this.root.classList.toggle("flow", k === "color" && !!this.o.gradFlow && this.o.motion !== false);
       clearInterval(this.slideTimer);
       if (k === "slideshow" && this.slides.length > 1) this.slideTimer = setInterval(() => this.nextSlide(), Math.max(5, this.o.slideEvery) * 1e3);
       this.draw();
@@ -1539,7 +1706,7 @@
       this.target = level2;
     }
     draw() {
-      if (this.o.kind === "theme") drawWaves(this.ctx, this.W, this.H, this.o.theme, this.t, this.energy);
+      if (this.o.kind === "theme") drawTheme(this.ctx, this.W, this.H, this.o.theme, this.t, this.energy);
     }
     loop(now) {
       requestAnimationFrame(this.loop);
@@ -1559,11 +1726,57 @@
     }
   };
 
-  // src/js/main.js
-  init_media();
+  // src/js/wallpaper/media.js
+  init_idb();
+  init_bus();
+  var urls = /* @__PURE__ */ new Map();
+  var url = (rec) => {
+    if (!urls.has(rec.id)) urls.set(rec.id, URL.createObjectURL(rec.blob));
+    return urls.get(rec.id);
+  };
+  var typeOf = (name, mime = "") => /gif$/i.test(mime) || /\.gif$/i.test(name) ? "gif" : /^video\//.test(mime) || /\.(mp4|webm|mov|m4v|ogv)$/i.test(name) ? "video" : "image";
+  var MEDIA_RE = /\.(jpe?g|png|webp|gif|bmp|avif|mp4|webm|mov|m4v|ogv)$/i;
+  var wpMedia = { local: [], we: { image: "", video: "", folder: [] } };
+  function mediaItems(type) {
+    const we = [];
+    if (wpMedia.we.image) we.push({ id: "we:image", url: wpMedia.we.image, type: typeOf(wpMedia.we.image), name: "Image property", source: "we" });
+    if (wpMedia.we.video) we.push({ id: "we:video", url: wpMedia.we.video, type: "video", name: "Video property", source: "we" });
+    const all = [...wpMedia.local, ...we, ...wpMedia.we.folder];
+    return type ? all.filter((i) => type === "slides" ? i.type !== "video" : i.type === type) : all;
+  }
+  var findMedia = (id) => mediaItems().find((i) => i.id === id);
+  async function loadWallpaperMedia() {
+    const all = await files.all();
+    wpMedia.local = all.filter((r) => r.type === "wallpaper").sort((a, b) => b.added - a.added).map((r) => ({ id: r.id, url: url(r), type: typeOf(r.name || "", r.mime), name: r.name || "File", source: "local" }));
+    bus.emit("wallpaper:media");
+  }
+  function setWEFolder(paths) {
+    wpMedia.we.folder = paths.filter((p) => MEDIA_RE.test(p)).map((p) => ({ id: "we:" + p, url: "file:///" + p.replace(/\\/g, "/"), type: typeOf(p), name: p.split(/[\\/]/).pop(), source: "we" }));
+    bus.emit("wallpaper:media");
+  }
+  async function addMedia(list2) {
+    const ids = [];
+    for (const f of list2) {
+      if (!/^(image|video)\//.test(f.type) && !MEDIA_RE.test(f.name)) continue;
+      const id = "wp:lib:" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+      await files.put({ id, type: "wallpaper", mime: f.type, name: f.name, blob: f, added: Date.now() });
+      ids.push(id);
+    }
+    await loadWallpaperMedia();
+    return ids.map(findMedia).filter(Boolean);
+  }
+  async function removeMedia(id) {
+    await files.del(id);
+    if (urls.has(id)) {
+      URL.revokeObjectURL(urls.get(id));
+      urls.delete(id);
+    }
+    await loadWallpaperMedia();
+  }
 
-  // src/js/components/menu.js
+  // src/js/components/keyboard.js
   init_util();
+  init_settings();
 
   // src/js/glass/motion.js
   init_util();
@@ -1627,7 +1840,106 @@
     el2.animate([{ transform: "scale(1)" }, { transform: "scale(0.94, 0.9)" }, { transform: "scale(1.02, 1.04)" }, { transform: "scale(1)" }], { duration: 380, easing: EASE_OUT, composite: "add" });
   }
 
+  // src/js/components/keyboard.js
+  var LAYOUTS = {
+    abc: [["q", "w", "e", "r", "t", "y", "u", "i", "o", "p"], ["a", "s", "d", "f", "g", "h", "j", "k", "l"], ["shift", "z", "x", "c", "v", "b", "n", "m", "back"], ["num", ",", "space", ".", "enter", "done"]],
+    num: [["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"], ["-", "/", ":", ";", "(", ")", "&", "@", '"'], ["#", "=", "+", "?", "!", "'", "_", "\\", "back"], ["abc", ",", "space", ".", "enter", "done"]]
+  };
+  var LABEL = { shift: "⇧", back: "⌫", num: "123", abc: "ABC", space: "space", enter: "return", done: "Done" };
+  var isText = (t2) => t2 && (t2.tagName === "TEXTAREA" || t2.tagName === "INPUT" && /^(text|search|url|email|)$/i.test(t2.type)) && !t2.readOnly && !t2.disabled;
+  var keyboardOn = () => cfg.keyboard === "on" || cfg.keyboard !== "off" && inWallpaperEngine();
+  function initKeyboard() {
+    const kb = el("div", "glass kb");
+    kb.hidden = true;
+    kb.setAttribute("role", "group");
+    kb.setAttribute("aria-label", "On-screen keyboard");
+    const pane2 = el("div", "pane");
+    kb.append(pane2);
+    document.body.append(kb);
+    glassify(kb, "panel");
+    let target = null, layout2 = "abc", shift = false;
+    function draw2() {
+      pane2.textContent = "";
+      LAYOUTS[layout2].forEach((keys) => {
+        const r = el("div", "kb-row");
+        keys.forEach((k) => {
+          const special = k in LABEL;
+          const b = el("button", "kb-key" + (special ? " act k-" + k : ""), special ? LABEL[k] : shift ? k.toUpperCase() : k);
+          b.type = "button";
+          b.dataset.k = k;
+          if (k === "shift" && shift) b.classList.add("on");
+          r.append(b);
+        });
+        pane2.append(r);
+      });
+    }
+    function insert(text) {
+      const t2 = target;
+      if (!t2) return;
+      const s = t2.selectionStart ?? t2.value.length, e = t2.selectionEnd ?? s;
+      t2.setRangeText(text, s, e, "end");
+      t2.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+    function press2(k) {
+      const t2 = target;
+      if (!t2) return;
+      if (k === "shift") {
+        shift = !shift;
+        return draw2();
+      }
+      if (k === "num" || k === "abc") {
+        layout2 = k;
+        shift = false;
+        return draw2();
+      }
+      if (k === "done") return hide(true);
+      if (k === "back") {
+        const s = t2.selectionStart ?? t2.value.length, e = t2.selectionEnd ?? s;
+        if (s !== e) t2.setRangeText("", s, e, "end");
+        else if (s > 0) t2.setRangeText("", s - 1, s, "end");
+        return t2.dispatchEvent(new Event("input", { bubbles: true }));
+      }
+      if (k === "enter") {
+        if (t2.tagName === "TEXTAREA") return insert("\n");
+        if (t2.form) t2.form.requestSubmit();
+        else t2.dispatchEvent(new CustomEvent("kbenter", { bubbles: true }));
+        return;
+      }
+      insert(k === "space" ? " " : shift ? k.toUpperCase() : k);
+      if (shift) {
+        shift = false;
+        draw2();
+      }
+    }
+    kb.addEventListener("pointerdown", (e) => e.preventDefault());
+    kb.addEventListener("click", (e) => {
+      const b = e.target.closest(".kb-key");
+      if (b) press2(b.dataset.k);
+    });
+    function show(t2) {
+      target = t2;
+      layout2 = "abc";
+      shift = !t2.value;
+      draw2();
+      if (kb.hidden) liquidOpen(kb, null);
+      requestAnimationFrame(() => t2.scrollIntoView({ block: "center", behavior: "smooth" }));
+    }
+    function hide(blur) {
+      if (blur && target) target.blur();
+      target = null;
+      if (!kb.hidden) liquidClose(kb, null);
+    }
+    addEventListener("focusin", (e) => {
+      if (keyboardOn() && isText(e.target)) show(e.target);
+    });
+    addEventListener("focusout", () => setTimeout(() => {
+      if (target && !isText(document.activeElement)) hide(false);
+    }, 0));
+    return { hide };
+  }
+
   // src/js/components/menu.js
+  init_util();
   var open = null;
   var CHECK = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
   function closeMenus() {
@@ -1735,8 +2047,20 @@
   var longDate = (d, f = cfg.clock.dateFormat) => new Intl.DateTimeFormat(void 0, DATE[f] || DATE.long).format(d);
 
   // src/js/widgets/clock.js
-  var CLOCK_STYLES = [["digital", "Digital"], ["analog", "Analog"], ["minimal", "Minimal"], ["stacked", "Stacked"]];
-  var CLOCK_FONTS = [["system", "System"], ["rounded", "Rounded"], ["serif", "Serif"], ["mono", "Mono"], ["condensed", "Condensed"]];
+  var CLOCK_STYLES = [["digital", "Digital"], ["analog", "Analog"], ["minimal", "Minimal"], ["stacked", "Stacked"], ["flip", "Flip"], ["words", "Words"], ["rings", "Rings"], ["outline", "Outline"], ["neon", "Neon"], ["lcd", "LCD"]];
+  var CLOCK_FONTS = [["system", "System"], ["rounded", "Rounded"], ["serif", "Serif"], ["mono", "Mono"], ["condensed", "Condensed"], ["pixel", "Pixel"]];
+  var DIGITAL = ["digital", "minimal", "outline", "neon", "lcd"];
+  var ONES = ["twelve", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen"];
+  var TENS = ["", "", "twenty", "thirty", "forty", "fifty"];
+  var num = (n) => n < 20 ? ONES[n] : TENS[Math.floor(n / 10)] + (n % 10 ? "-" + ONES[n % 10] : "");
+  function timeWords(d) {
+    const h = d.getHours() % 12, m = d.getMinutes();
+    return ["It’s", h === 0 ? "twelve" : ONES[h], m === 0 ? "o’clock" : m < 10 ? "oh " + ONES[m] : num(m)];
+  }
+  var ring = (r, cls) => {
+    const C = 2 * Math.PI * r;
+    return `<circle cx="60" cy="60" r="${r}" fill="none" class="rg-track" stroke-width="7"/><circle cx="60" cy="60" r="${r}" fill="none" class="rg ${cls}" stroke-width="7" stroke-linecap="round" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${C.toFixed(1)}" data-c="${C.toFixed(1)}" transform="rotate(-90 60 60)"/>`;
+  };
   var CLOCK_WEIGHTS = [["auto", "Auto"], ["300", "Light"], ["500", "Medium"], ["700", "Bold"], ["800", "Heavy"]];
   var CLOCK_NUMERALS = [["four", "12 · 3 · 6 · 9"], ["all", "All"], ["none", "None"]];
   function analogSVG(size, numerals) {
@@ -1765,6 +2089,10 @@
       host.textContent = "";
       if (o.style === "analog") host.innerHTML = analogSVG(o.size || 140, o.numerals) + `<div class="cf-date"></div>`;
       else if (o.style === "stacked") host.innerHTML = `<div class="cf-h num"></div><div class="cf-m num"><span class="cf-mm"></span><span class="cf-ap"></span></div><div class="cf-s num"></div><div class="cf-date"></div>`;
+      else if (o.style === "flip") host.innerHTML = `<div class="cf-flip num"><span class="fl" data-i="0"></span><span class="fl" data-i="1"></span><span class="fl-sep"></span><span class="fl" data-i="2"></span><span class="fl" data-i="3"></span><span class="fl-s"><span class="fl sm" data-i="4"></span><span class="fl sm" data-i="5"></span></span><span class="cf-ap"></span></div><div class="cf-date"></div>`;
+      else if (o.style === "words") host.innerHTML = `<div class="cf-words"><span class="w0"></span><b class="w1"></b><span class="w2"></span></div><div class="cf-date"></div>`;
+      else if (o.style === "rings") host.innerHTML = `<div class="cf-rings"><svg viewBox="0 0 120 120" aria-hidden="true">${ring(54, "rg-h")}${ring(44, "rg-m")}${ring(34, "rg-s")}</svg><div class="cf-time num"><span class="cf-hh"></span><span class="cf-colon"></span><span class="cf-mm"></span></div></div><div class="cf-date"></div>`;
+      else if (o.style === "lcd") host.innerHTML = `<div class="cf-lcd"><div class="cf-time num cf-ghost" aria-hidden="true"></div><div class="cf-time num"><span class="cf-hh"></span><span class="cf-colon"></span><span class="cf-mm"></span><span class="cf-sec"></span><span class="cf-ap"></span></div></div><div class="cf-date"></div>`;
       else host.innerHTML = `<div class="cf-time num"><span class="cf-hh"></span><span class="cf-colon"></span><span class="cf-mm"></span><span class="cf-sec"></span><span class="cf-ap"></span></div><div class="cf-date"></div>`;
       built = `${o.style}|${o.size || ""}|${o.numerals || ""}`;
     }
@@ -1772,7 +2100,7 @@
       tick(now) {
         const o = getOpts();
         if (built !== `${o.style}|${o.size || ""}|${o.numerals || ""}`) build2(o);
-        host.className = `clockface cf-${o.style}${o.blink ? " blink" : ""}`;
+        host.className = `clockface cf-${o.style}${o.blink ? " blink" : ""}${DIGITAL.includes(o.style) ? " cf-digitalish" : ""}`;
         host.dataset.font = o.font || "system";
         const w = o.weight && o.weight !== "auto" ? +o.weight : 0;
         if (w) {
@@ -1795,6 +2123,43 @@
           return;
         }
         const t2 = timeParts(now);
+        if (o.style === "words") {
+          const [a, b, c] = timeWords(now);
+          q(".w0").textContent = a;
+          q(".w1").textContent = b;
+          q(".w2").textContent = c;
+          return;
+        }
+        if (o.style === "flip") {
+          const digits = (t2.h.padStart(2, "0") + t2.m + t2.s).split("");
+          host.querySelectorAll(".fl").forEach((f) => {
+            const v = digits[+f.dataset.i];
+            if (f.textContent !== v) {
+              const first = !f.textContent;
+              f.textContent = v;
+              if (!first && !matchMedia("(prefers-reduced-motion: reduce)").matches) f.animate([{ transform: "perspective(400px) rotateX(-90deg)" }, { transform: "perspective(400px) rotateX(0)" }], { duration: 380, easing: "cubic-bezier(0.22, 1, 0.36, 1)" });
+            }
+          });
+          q(".fl-sep").textContent = t2.sep;
+          q(".fl-s").hidden = !o.seconds;
+          q(".cf-ap").textContent = t2.ap;
+          q(".cf-ap").hidden = !t2.ap;
+          return;
+        }
+        if (o.style === "rings") {
+          const H = now.getHours() % 12 + now.getMinutes() / 60, Mi = now.getMinutes() + now.getSeconds() / 60, Se = now.getSeconds();
+          [[".rg-h", H / 12], [".rg-m", Mi / 60], [".rg-s", Se / 60]].forEach(([sel, f]) => {
+            const c = q(sel), C = +c.dataset.c;
+            c.setAttribute("stroke-dashoffset", (C * (1 - f)).toFixed(1));
+          });
+          q(".rg-s").style.display = o.seconds ? "" : "none";
+          host.querySelectorAll(".rg-track")[2].style.display = o.seconds ? "" : "none";
+          q(".cf-hh").textContent = t2.h;
+          q(".cf-colon").textContent = t2.sep;
+          q(".cf-mm").textContent = t2.m;
+          return;
+        }
+        if (o.style === "lcd") q(".cf-ghost").textContent = `88${t2.sep}88${o.seconds ? "88" : ""}`;
         if (o.style === "stacked") {
           q(".cf-h").textContent = t2.h.padStart(2, "0");
           q(".cf-mm").textContent = t2.m;
@@ -1819,10 +2184,15 @@
   function mountClock(pane2) {
     const host = el("div");
     pane2.append(host);
-    pane2.parentElement.style.setProperty("--cf-scale", cfg.clock.size);
-    const face = clockFace(host, cardClockOpts);
+    const card = pane2.parentElement, face = clockFace(host, cardClockOpts);
+    const look = () => {
+      card.style.setProperty("--cf-scale", cfg.clock.size);
+      card.style.setProperty("--cf-align", cfg.clock.align);
+      card.style.setProperty("--cf-justify", { left: "start", right: "end" }[cfg.clock.align] || "center");
+    };
+    look();
     return { tick(now) {
-      pane2.parentElement.style.setProperty("--cf-scale", cfg.clock.size);
+      look();
       face.tick(now);
     } };
   }
@@ -1854,14 +2224,23 @@
     if (code >= 95) return ["storm", "Thunderstorms"];
     return ["cloud", "Cloudy"];
   }
+  async function searchCities(q) {
+    const g = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=8`).then((r) => r.json());
+    return (g.results || []).map((r) => ({ name: r.name, latitude: r.latitude, longitude: r.longitude, label: [r.name, r.admin1, r.country_code].filter(Boolean).join(", ") }));
+  }
+  async function locateByIP() {
+    const r = await fetch("https://ipapi.co/json/").then((r2) => r2.json());
+    if (!r || !r.city) throw new Error("unknown");
+    return { name: r.city, latitude: r.latitude, longitude: r.longitude, label: [r.city, r.region, r.country_code].filter(Boolean).join(", ") };
+  }
   function mountWeather(pane2) {
     pane2.innerHTML = `<div class="wx-top"><div><div class="wx-city"></div><div class="wx-temp num"></div></div>
     <div class="wx-cond"><span class="wx-icon"></span><span class="wx-label">Loading</span><div class="soft num wx-hilo"></div></div></div>
     <div class="wx-hours num"></div><div class="wx-note"></div>`;
     const q = (s) => pane2.querySelector(s);
     let timer, last = null;
-    const render = (d, live2) => {
-      last = [d, live2];
+    const render = (d, live2, reason) => {
+      last = [d, live2, reason];
       q(".wx-city").textContent = d.city;
       q(".wx-temp").textContent = Math.round(d.temp) + "°";
       const [ic, label] = codeInfo(d.code, d.isDay);
@@ -1879,7 +2258,7 @@
         hrs.append(c);
       });
       const note = q(".wx-note");
-      note.textContent = live2 ? `Updated ${fmtTime(/* @__PURE__ */ new Date())} · Open-Meteo` : "Sample forecast. Live weather can’t load in this view; it works in Wallpaper Engine and when the file is opened directly.";
+      note.textContent = live2 ? `Updated ${fmtTime(/* @__PURE__ */ new Date())} · Open-Meteo` : reason === "city" ? `Couldn’t find “${cfg.city}”. Pick a city in Settings › Weather. Showing a sample.` : "Sample forecast. Live weather can’t load right now (offline?). It retries every few minutes.";
       note.classList.toggle("warn", !live2);
       bus.emit("weather", { temp: d.temp, code: d.code, isDay: d.isDay, live: live2 });
       bus.emit("layout");
@@ -1901,12 +2280,20 @@
     };
     async function load() {
       clearTimeout(timer);
+      let notFound = false;
       try {
         const ctl = new AbortController();
         setTimeout(() => ctl.abort(), 7e3);
-        const g = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(cfg.city)}&count=1`, { signal: ctl.signal }).then((r) => r.json());
-        if (!g.results || !g.results.length) throw new Error("No such city");
-        const p = g.results[0], u = cfg.unit === "f" ? "&temperature_unit=fahrenheit" : "";
+        let p = cfg.geo && cfg.geo.name === cfg.city ? cfg.geo : null;
+        if (!p) {
+          const g = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(cfg.city)}&count=1`, { signal: ctl.signal }).then((r) => r.json());
+          if (!g.results || !g.results.length) {
+            notFound = true;
+            throw new Error("No such city");
+          }
+          p = { name: g.results[0].name, latitude: g.results[0].latitude, longitude: g.results[0].longitude };
+        }
+        const u = cfg.unit === "f" ? "&temperature_unit=fahrenheit" : "";
         const f = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${p.latitude}&longitude=${p.longitude}&current=temperature_2m,weather_code,is_day&hourly=temperature_2m,weather_code,is_day&daily=temperature_2m_max,temperature_2m_min&forecast_days=2&timezone=auto${u}`, { signal: ctl.signal }).then((r) => r.json());
         let idx2 = f.hourly.time.findIndex((t2) => t2.slice(0, 13) === f.current.time.slice(0, 13));
         if (idx2 < 0) idx2 = 0;
@@ -1914,7 +2301,7 @@
         render({ city: p.name, temp: f.current.temperature_2m, code: f.current.weather_code, isDay: !!f.current.is_day, hi: f.daily.temperature_2m_max[0], lo: f.daily.temperature_2m_min[0], hours }, true);
         timer = setTimeout(load, 15 * 6e4);
       } catch {
-        render(sample2(), false);
+        render(sample2(), false, notFound ? "city" : "net");
         timer = setTimeout(load, 5 * 6e4);
       }
     }
@@ -2016,7 +2403,7 @@
       for (let x = -d; x < d; x += step) ctx.fillRect(x, -d, Math.max(1, m * 0.012), d * 2);
       ctx.restore();
       const px2 = W2 * (W2 > 900 ? 0.56 : 0.6), py2 = H * 0.6, pr = m * 0.27;
-      const ring = (front) => {
+      const ring2 = (front) => {
         ctx.save();
         ctx.translate(px2, py2);
         ctx.rotate(-0.28);
@@ -2027,7 +2414,7 @@
         ctx.stroke();
         ctx.restore();
       };
-      ring(false);
+      ring2(false);
       circle(ctx, px2, py2, pr, p.a);
       ctx.save();
       ctx.beginPath();
@@ -2035,7 +2422,7 @@
       ctx.clip();
       circle(ctx, px2 + pr * 0.55, py2 + pr * 0.2, pr, p.c);
       ctx.restore();
-      ring(true);
+      ring2(true);
       if (title) drawTitle(ctx, W2, H, t2.album, p.b);
     },
     ostia(ctx, W2, H, t2, title) {
@@ -2555,8 +2942,7 @@
     const list2 = el("ul", "rm-list");
     const form = el("form", "rm-add");
     form.innerHTML = `<label class="sr-only" for="rmIn">New reminder</label><input class="field" id="rmIn" placeholder="New reminder" autocomplete="off"><button class="pill" type="submit">Add</button>`;
-    const weHint = el("p", "we-hint faint", "Add reminders in Wallpaper Engine’s properties panel; typing isn’t passed to wallpapers.");
-    pane2.append(title, list2, form, weHint);
+    pane2.append(title, list2, form);
     const save = () => store.set("reminders", items);
     function render() {
       list2.textContent = "";
@@ -2705,7 +3091,7 @@
   function mountFocus(pane2) {
     const C = 2 * Math.PI * 48;
     pane2.innerHTML = `<div class="w-title">Focus Timer</div><div class="fc-body"><div class="fc-ring">
-    <svg width="110" height="110" viewBox="0 0 110 110" aria-hidden="true"><circle cx="55" cy="55" r="48" fill="none" stroke="var(--track-bg)" stroke-width="9"/><circle class="fc-arc" cx="55" cy="55" r="48" fill="none" stroke="#bf5af2" stroke-width="9" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="0"/></svg>
+    <svg width="110" height="110" viewBox="0 0 110 110" aria-hidden="true"><circle cx="55" cy="55" r="48" fill="none" stroke="var(--track-bg)" stroke-width="9"/><circle class="fc-arc" cx="55" cy="55" r="48" fill="none" style="stroke: var(--accent, #bf5af2)" stroke-width="9" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="0"/></svg>
     <span class="t num" role="timer" aria-live="off"></span></div><div class="fc-btns"><button class="pill fc-start">Start</button><button class="pill fc-reset">Reset</button></div></div>`;
     const q = (s2) => pane2.querySelector(s2);
     const s = { total: 1500, left: 1500, running: false, endAt: 0 };
@@ -2817,72 +3203,148 @@
     const W2 = innerWidth, H = innerHeight, w = node.offsetWidth, h = node.offsetHeight;
     const left = p.ax === "r" ? W2 - p.x - w : p.x, top = p.ay === "b" ? H - p.y - h : p.y;
     node.style.left = clamp(left, 0, Math.max(0, W2 - w)) + "px";
-    node.style.top = clamp(top, 0, Math.max(0, H - Math.min(h, 60))) + "px";
+    node.style.top = clamp(top, 0, Math.max(0, H - h)) + "px";
   }
+  var autoWidth = (W2) => W2 >= 1800 ? 320 : W2 >= 760 ? 300 : Math.min(360, W2 - 24);
+  var LAYOUTS2 = [["columns", "Columns"], ["left", "Sidebar left"], ["right", "Sidebar right"], ["bento", "Bento grid"], ["row", "Bottom row"]];
   function layout({ animate = false } = {}) {
-    const W2 = innerWidth, H = innerHeight, gap = 14, top = TOP(), bottom = H - (cfg.dock.mode === "always" ? 104 : 24);
+    const W2 = innerWidth, H = innerHeight, gap = 14, bottom = H - (cfg.dock.mode === "always" ? 104 : 24);
     const before = /* @__PURE__ */ new Map();
     if (animate) $$(".widget").forEach((w) => {
       if (!w.hidden) before.set(w, w.getBoundingClientRect());
     });
     const vis = ORDER.filter((id) => cfg.widgets[id] && widgetEl(id) && !widgetEl(id).dataset.closing);
+    const cw = autoWidth(W2);
     vis.forEach((id) => {
-      const n = widgetEl(id), cw2 = cfg.cards[id] && cfg.cards[id].width;
-      n.style.width = (cw2 || (W2 >= 1800 ? 320 : W2 >= 760 ? 300 : Math.min(360, W2 - 24))) + "px";
+      const n = widgetEl(id), own = cfg.cards[id] && cfg.cards[id].width;
+      n.style.width = (own || cw) + "px";
     });
     const free = vis.filter((id) => !cfg.positions[id]);
-    const cw = W2 >= 1800 ? 320 : W2 >= 760 ? 300 : Math.min(360, W2 - 24);
-    const cands = [];
-    if (W2 >= 1e3) cands.push([M, W2 - M - cw]);
-    if (W2 >= 1240) cands.push([M, M + cw + gap, W2 - M - cw, W2 - M - 2 * cw - gap]);
-    if (W2 >= 700 && W2 < 1e3) cands.push([Math.round(W2 / 2 - cw - gap / 2), Math.round(W2 / 2 + gap / 2)]);
-    if (!cands.length) cands.push([Math.round((W2 - cw) / 2)]);
+    const mode = W2 < 700 ? "columns" : cfg.layoutMode;
+    placeHero();
     const box = (n) => {
       const l = parseFloat(n.style.left) || 0, t2 = parseFloat(n.style.top) || 0;
       return { l, t: t2, r: l + n.offsetWidth, b: t2 + n.offsetHeight };
     };
-    const taken = vis.filter((id) => cfg.positions[id]).map((id) => {
+    const hit = (occ, l, t2, w, h) => occ.find((o) => o.l < l + w + gap && o.r + gap > l && o.t < t2 + h + gap && o.b + gap > t2);
+    const saved2 = vis.filter((id) => cfg.positions[id]).map((id) => {
       const n = widgetEl(id);
       placeSaved(n, cfg.positions[id]);
-      return box(n);
+      return { n, ay: cfg.positions[id].ay };
+    });
+    const taken = [];
+    [
+      ...saved2.filter((c) => c.ay !== "b").sort((a, b) => parseFloat(a.n.style.top) - parseFloat(b.n.style.top)),
+      ...saved2.filter((c) => c.ay === "b").sort((a, b) => parseFloat(b.n.style.top) - parseFloat(a.n.style.top))
+    ].forEach(({ n, ay }) => {
+      let r = box(n), o, guard = 0;
+      const over = (q) => taken.find((o2) => o2.l < q.r - 1 && o2.r > q.l + 1 && o2.t < q.b - 1 && o2.b > q.t + 1);
+      while ((o = over(r)) && guard++ < 20) {
+        const top = ay === "b" ? o.t - gap - (r.b - r.t) : o.b + gap;
+        if (top < 0 || top + (r.b - r.t) > H) break;
+        n.style.top = top + "px";
+        r = box(n);
+      }
+      taken.push(r);
     });
     let place = {};
-    for (const xs of cands) {
-      const ys = xs.map(() => top), occ = [...taken];
-      place = {};
+    if (mode === "row") {
+      const occ = [...taken];
+      let x = M, base = bottom, rowTop = bottom;
       free.forEach((id) => {
         const n = widgetEl(id), w = n.offsetWidth, h = n.offsetHeight;
-        let c = 0;
-        ys.forEach((y2, i) => {
-          if (y2 < ys[c] - 1) c = i;
-        });
-        let y = ys[c], hit;
-        while (hit = occ.find((o) => o.l < xs[c] + w && o.r > xs[c] && o.t < y + h + gap && o.b + gap > y)) y = hit.b + gap;
-        place[id] = [xs[c], y];
-        occ.push({ l: xs[c], t: y, r: xs[c] + w, b: y + h });
-        ys[c] = y + h + gap;
+        if (x + w > W2 - M && x > M) {
+          x = M;
+          base = rowTop - gap;
+          rowTop = base;
+        }
+        let o;
+        while ((o = hit(occ, x, base - h, w, h)) && x + w <= W2 - M) x = o.r + gap;
+        place[id] = [x, Math.max(TOP(), base - h)];
+        occ.push({ l: x, t: base - h, r: x + w, b: base });
+        rowTop = Math.min(rowTop, base - h);
+        x += w + gap;
       });
-      if (Math.max(...ys) - gap <= bottom) break;
+    } else {
+      let cands = [], top = TOP();
+      const col = (i) => M + i * (cw + gap), colR = (i) => W2 - M - cw - i * (cw + gap);
+      if (mode === "left") cands = [[col(0)], [col(0), col(1)], [col(0), col(1), col(2)]];
+      else if (mode === "right") cands = [[colR(0)], [colR(0), colR(1)], [colR(0), colR(1), colR(2)]];
+      else if (mode === "bento") {
+        const n = clamp(Math.floor((W2 - 2 * M + gap) / (cw + gap)), 1, 4);
+        for (let k = Math.min(3, n); k <= n; k++) {
+          const s0 = Math.round((W2 - (k * cw + (k - 1) * gap)) / 2);
+          cands.push([...Array(k)].map((_, i) => s0 + i * (cw + gap)));
+        }
+        const hero3 = $("#hero");
+        if (hero3 && !hero3.hidden && !cfg.positions.hero) top = Math.max(top, (parseFloat(hero3.style.top) || 0) + hero3.offsetHeight + 28);
+      } else {
+        if (W2 >= 1e3) cands.push([M, W2 - M - cw]);
+        if (W2 >= 1240) cands.push([M, M + cw + gap, W2 - M - cw, W2 - M - 2 * cw - gap]);
+        if (W2 >= 700 && W2 < 1e3) cands.push([Math.round(W2 / 2 - cw - gap / 2), Math.round(W2 / 2 + gap / 2)]);
+      }
+      if (!cands.length) cands.push([Math.round((W2 - cw) / 2)]);
+      for (const xs of cands) {
+        const ys = xs.map(() => top), occ = [...taken];
+        place = {};
+        free.forEach((id) => {
+          const n = widgetEl(id), w = n.offsetWidth, h = n.offsetHeight;
+          let c = 0;
+          ys.forEach((y2, i) => {
+            if (y2 < ys[c] - 1) c = i;
+          });
+          let y = ys[c], o;
+          while (o = hit(occ, xs[c], y, w, h)) y = o.b + gap;
+          place[id] = [xs[c], y];
+          occ.push({ l: xs[c], t: y, r: xs[c] + w, b: y + h });
+          ys[c] = y + h + gap;
+        });
+        if (Math.max(...ys) - gap <= bottom) break;
+      }
     }
     free.forEach((id) => {
       const n = widgetEl(id);
       n.style.left = place[id][0] + "px";
       n.style.top = place[id][1] + "px";
     });
-    placeHero();
     if (animate) flip([...before.keys()].filter((n) => !n.hidden), before);
   }
   function placeHero() {
-    const hero2 = $("#hero");
-    if (!hero2 || hero2.hidden) return;
-    const p = cfg.positions.hero;
-    if (p) {
-      hero2.style.transform = "none";
-      placeSaved(hero2, p);
-    } else {
-      hero2.style.left = (innerWidth - hero2.offsetWidth) / 2 + "px";
-      hero2.style.top = Math.round(innerHeight * 0.14) + "px";
+    const hero3 = $("#hero");
+    if (!hero3 || hero3.hidden) return;
+    const p = cfg.positions.hero, W2 = innerWidth, H = innerHeight, w = hero3.offsetWidth, h = hero3.offsetHeight, cw = autoWidth(W2);
+    hero3.style.transform = "none";
+    if (p) return placeSaved(hero3, p);
+    const mode = W2 < 700 ? "columns" : cfg.layoutMode;
+    let x = (W2 - w) / 2, y = Math.round(H * 0.14);
+    if (mode === "left") {
+      x = M + cw + (W2 - M - cw - w) / 2;
+      y = (H - h) / 2;
+    } else if (mode === "right") {
+      x = (W2 - M - cw - w) / 2;
+      y = (H - h) / 2;
+    } else if (mode === "row") {
+      x = M + 12;
+      y = TOP() + 12;
+    } else if (mode === "bento") y = TOP() + 8;
+    hero3.style.left = clamp(Math.round(x), 0, Math.max(0, W2 - w)) + "px";
+    hero3.style.top = clamp(Math.round(y), 0, Math.max(0, H - h)) + "px";
+  }
+  function placeHeroAt(spot) {
+    const hero3 = $("#hero");
+    if (!hero3) return;
+    if (spot === "auto") {
+      const p = { ...cfg.positions };
+      delete p.hero;
+      set("positions", p);
+      return;
     }
+    const W2 = innerWidth, H = innerHeight, w = hero3.offsetWidth, h = hero3.offsetHeight, pad = 40;
+    const [v, hz] = spot;
+    const left = hz === "l" ? pad : hz === "r" ? W2 - pad - w : (W2 - w) / 2;
+    const top = v === "t" ? TOP() + 8 : v === "b" ? H - pad - h - (cfg.dock.mode === "always" ? 90 : 0) : (H - h) / 2;
+    const ax = hz === "r" ? "r" : "l", ay = v === "b" ? "b" : "t";
+    set("positions", { ...cfg.positions, hero: { ax, ay, x: Math.round(ax === "r" ? W2 - left - w : left), y: Math.round(ay === "b" ? H - top - h : top) } });
   }
   function setWidgetVisible(id, on) {
     const n = widgetEl(id);
@@ -2909,7 +3371,7 @@
     let d = null;
     const blocked = (t2) => t2.closest("button, input, textarea, select, a, .slider, .seg, .mu-list, .rm-list, [contenteditable]");
     addEventListener("pointerdown", (e) => {
-      if (e.button !== 0) return;
+      if (e.button !== 0 || cfg.lockLayout) return;
       const node = e.target.closest(".widget, #hero");
       if (!node || blocked(e.target)) return;
       const r = node.getBoundingClientRect();
@@ -2948,8 +3410,8 @@
       }
       if (sx == null) x = Math.round(x / 8) * 8;
       if (sy == null) y = Math.round(y / 8) * 8;
-      x = clamp(x, 0, W2 - w);
-      y = clamp(y, 0, H - Math.min(h, 60));
+      x = clamp(x, 0, Math.max(0, W2 - w));
+      y = clamp(y, 0, Math.max(0, H - h));
       d.node.style.left = x + "px";
       d.node.style.top = y + "px";
       guideX.style.display = sx == null ? "none" : "block";
@@ -2960,17 +3422,20 @@
     const end = () => {
       if (!d) return;
       if (d.on) {
-        const r = d.node.getBoundingClientRect(), W2 = innerWidth, H = innerHeight;
-        const ax = r.left + r.width / 2 > W2 / 2 ? "r" : "l", ay = r.top + r.height / 2 > H / 2 ? "b" : "t";
+        const W2 = innerWidth, H = innerHeight;
+        const rect = (n) => {
+          const left = parseFloat(n.style.left) || 0, top = parseFloat(n.style.top) || 0;
+          return { left, top, width: n.offsetWidth, height: n.offsetHeight, right: left + n.offsetWidth, bottom: top + n.offsetHeight };
+        };
         const anchor = (rr) => {
-          const ax2 = rr.left + rr.width / 2 > W2 / 2 ? "r" : "l", ay2 = rr.top + rr.height / 2 > H / 2 ? "b" : "t";
-          return { ax: ax2, ay: ay2, x: Math.round(ax2 === "r" ? W2 - rr.right : rr.left), y: Math.round(ay2 === "b" ? H - rr.bottom : rr.top) };
+          const ax = rr.left + rr.width / 2 > W2 / 2 ? "r" : "l", ay = rr.top + rr.height / 2 > H / 2 ? "b" : "t";
+          return { ax, ay, x: Math.round(ax === "r" ? W2 - rr.right : rr.left), y: Math.round(ay === "b" ? H - rr.bottom : rr.top) };
         };
         const pos = { ...cfg.positions };
         $$(".widget").forEach((w) => {
-          if (!w.hidden && w !== d.node && !pos[w.dataset.w]) pos[w.dataset.w] = anchor(w.getBoundingClientRect());
+          if (!w.hidden && !w.dataset.closing && w !== d.node && !pos[w.dataset.w]) pos[w.dataset.w] = anchor(rect(w));
         });
-        pos[d.id] = anchor(r);
+        pos[d.id] = anchor(rect(d.node));
         update({ positions: pos }, { silent: true });
         d.node.classList.remove("dragging");
         document.documentElement.classList.remove("is-dragging");
@@ -3003,7 +3468,7 @@
     const q = (s) => isl.querySelector(s);
     attach($("#ivL"), { align: "center", reverse: true, bars: 18 });
     attach($("#ivR"), { align: "center", bars: 18 });
-    let pinned = false, hover = false, music = { playing: false }, wx = null;
+    let pinned = false, hover = false, music = { playing: false }, wx = null, battery = null;
     function mode() {
       const m = cfg.island.mode;
       wrap.dataset.mode = m;
@@ -3024,17 +3489,32 @@
         }
       }
       isl.classList.toggle("playing", !!music.playing);
-      q(".isl-time").hidden = !cfg.island.showTime;
-      q(".isl-wx").hidden = !cfg.island.showWeather || !wx;
+      const I = cfg.island;
+      q(".isl-time").hidden = !I.showTime;
+      q(".isl-wx").hidden = !I.showWeather || !wx;
+      q(".isl-net").style.display = I.showNetwork ? "" : "none";
+      q(".isl-np-wrap").hidden = !I.showNowPlaying;
+      q(".isl-cc").hidden = !I.showCC;
+      q(".isl-menu").hidden = !I.showMenu;
+      drawBattery();
       wrap.classList.toggle("viz-on", cfg.viz.island && !!music.playing && cfg.island.mode !== "bar");
     }
+    let hoverT = 0;
     isl.addEventListener("pointerenter", () => {
-      hover = true;
-      sync();
+      clearTimeout(hoverT);
+      hoverT = setTimeout(() => {
+        hover = true;
+        sync();
+      }, 120);
     });
     wrap.addEventListener("pointerleave", () => {
-      hover = false;
-      sync();
+      clearTimeout(hoverT);
+      hoverT = setTimeout(() => {
+        if (!wrap.matches(":hover")) {
+          hover = false;
+          sync();
+        }
+      }, 320);
     });
     q(".isl-compact").addEventListener("click", (e) => {
       if (e.target.closest("button")) return;
@@ -3047,8 +3527,18 @@
         sync();
       }
     });
+    let hideT = 0;
     addEventListener("pointermove", (e) => {
-      if (cfg.island.mode === "auto") wrap.classList.toggle("revealed", e.clientY < 10 || wrap.matches(":hover"));
+      if (cfg.island.mode !== "auto") return;
+      const shown = wrap.classList.contains("revealed"), reach = 10 + isl.offsetHeight + 40;
+      if (e.clientY < 10 || shown && (e.clientY < reach || pinned || wrap.matches(":hover, :focus-within"))) {
+        clearTimeout(hideT);
+        hideT = 0;
+        if (!shown) wrap.classList.add("revealed");
+      } else if (shown && !hideT) hideT = setTimeout(() => {
+        hideT = 0;
+        wrap.classList.remove("revealed");
+      }, 450);
     }, { passive: true });
     q(".isl-menu").onclick = (e) => openMenu(e.currentTarget);
     q(".isl-cc").onclick = (e) => toggleCC(e.currentTarget);
@@ -3088,10 +3578,20 @@
       q(".isl-net").style.opacity = on ? "1" : ".35";
     });
     bus.on("battery", (b) => {
-      const s = q(".isl-bat");
-      s.hidden = false;
-      s.textContent = Math.round(b.level * 100) + "%";
+      battery = b;
+      drawBattery();
     });
+    function drawBattery() {
+      const s = q(".isl-bat"), m = cfg.island.battery;
+      s.hidden = !battery || m === "off";
+      if (s.hidden) return;
+      const pctN = Math.round(battery.level * 100), low = battery.level <= 0.2 && !battery.charging;
+      const fill = low ? "#ff453a" : battery.charging ? "#30d158" : "currentColor";
+      const bolt = battery.charging ? '<path d="M13.6 2.2 9.4 7.3h3l-1.2 4.5 4.3-5.4h-3z" fill="#fff" stroke="rgba(0,0,0,.35)" stroke-width=".5"/>' : "";
+      const icon2 = (inside) => inside ? `<svg class="bat-ic big" width="34" height="16" viewBox="0 0 34 16" aria-hidden="true"><rect x=".75" y=".75" width="29" height="14.5" rx="4.2" fill="none" stroke="currentColor" stroke-opacity=".5" stroke-width="1.5"/><rect x="31" y="5.2" width="2.2" height="5.6" rx="1.1" fill="currentColor" fill-opacity=".5"/><rect x="2.5" y="2.5" width="${(25.5 * battery.level).toFixed(1)}" height="11" rx="2.6" fill="${fill}" fill-opacity="${low || battery.charging ? 0.9 : 0.35}"/><text x="15.2" y="11.6" text-anchor="middle" font-size="9.5" font-weight="800" fill="currentColor">${pctN}</text></svg>` : `<svg class="bat-ic" width="25" height="13" viewBox="0 0 25 13" aria-hidden="true"><rect x=".75" y=".75" width="21" height="11.5" rx="3.4" fill="none" stroke="currentColor" stroke-opacity=".5" stroke-width="1.5"/><rect x="22.8" y="4.3" width="1.8" height="4.4" rx=".9" fill="currentColor" fill-opacity=".5"/><rect x="2.5" y="2.5" width="${(17.5 * battery.level).toFixed(1)}" height="8" rx="1.8" fill="${fill}"/>${bolt}</svg>`;
+      s.innerHTML = m === "inside" ? icon2(true) : m === "icon" ? icon2(false) : m === "both" ? `${pctN}% ${icon2(false)}` : `${pctN}%`;
+      s.setAttribute("aria-label", `Battery ${pctN}%${battery.charging ? ", charging" : ""}`);
+    }
     bus.on("settings", ({ patch }) => {
       if (patch.island || patch.viz) mode();
       if (patch.music) q(".isl-shuffle").setAttribute("aria-pressed", String(cfg.music.shuffle));
@@ -3173,8 +3673,18 @@
         row.append(b);
       });
     }
+    let hideT = 0;
     addEventListener("pointermove", (e) => {
-      if (cfg.dock.mode === "auto") dock.classList.toggle("revealed", e.clientY > innerHeight - 12 || dock.matches(":hover"));
+      if (cfg.dock.mode !== "auto") return;
+      const shown = dock.classList.contains("revealed"), reach = innerHeight - dock.offsetHeight - 50;
+      if (e.clientY > innerHeight - 12 || shown && (e.clientY > reach || dock.matches(":hover"))) {
+        clearTimeout(hideT);
+        hideT = 0;
+        if (!shown) dock.classList.add("revealed");
+      } else if (shown && !hideT) hideT = setTimeout(() => {
+        hideT = 0;
+        dock.classList.remove("revealed");
+      }, 450);
     }, { passive: true });
     let raf2 = 0, mx = null;
     dock.addEventListener("pointermove", (e) => {
@@ -3313,11 +3823,156 @@
     return b;
   }
 
+  // src/js/core/looks.js
+  init_settings();
+  var SKINS = [["glass", "Liquid Glass"], ["brutal", "Brutalist"], ["neon", "Neon"], ["paper", "Paper"], ["retro", "Retro OS"], ["clay", "Clay"], ["bare", "Bare"]];
+  var UI_FONTS = [["system", "System"], ["rounded", "Rounded"], ["serif", "Serif"], ["mono", "Mono"], ["condensed", "Condensed"]];
+  var hero = (o) => ({ hero: { color: "auto", font: "system", weight: "auto", plate: false, numerals: "four", align: "center", ...o } });
+  var LOOKS = [
+    {
+      id: "liquid",
+      name: "Liquid Glass",
+      sub: "Clear glass, columns, Dusk",
+      skin: "glass",
+      layoutMode: "columns",
+      accent: "auto",
+      uiFont: "system",
+      style: "clear",
+      wallpaper: { kind: "theme", theme: "dusk" },
+      ...hero({ style: "digital" }),
+      island: { mode: "island" }
+    },
+    {
+      id: "brutal",
+      name: "Brutalist",
+      sub: "Hard edges on Bauhaus shapes",
+      skin: "brutal",
+      layoutMode: "bento",
+      accent: "#ffd60a",
+      uiFont: "system",
+      style: "clear",
+      wallpaper: { kind: "theme", theme: "bauhaus" },
+      ...hero({ style: "outline", font: "mono", weight: 800, color: "#111111" }),
+      island: { mode: "bar" }
+    },
+    {
+      id: "cyber",
+      name: "Cyberpunk",
+      sub: "Neon panels, Outrun sunset",
+      skin: "neon",
+      layoutMode: "right",
+      accent: "#ff2bd6",
+      uiFont: "system",
+      style: "clear",
+      wallpaper: { kind: "theme", theme: "outrun" },
+      ...hero({ style: "neon", font: "condensed" }),
+      island: { mode: "island" }
+    },
+    {
+      id: "paper",
+      name: "Paper Desk",
+      sub: "Sticky notes along the bottom",
+      skin: "paper",
+      layoutMode: "row",
+      accent: "#e63946",
+      uiFont: "system",
+      style: "clear",
+      wallpaper: { kind: "color", colorA: "#efe3c8", colorB: "#c9b28f", gradStyle: "radial", gradFlow: false },
+      ...hero({ style: "words", font: "serif", color: "#3a2f25", align: "left" }),
+      island: { mode: "island" }
+    },
+    {
+      id: "retro",
+      name: "Retro OS",
+      sub: "Bevels, title bars, LCD clock",
+      skin: "retro",
+      layoutMode: "left",
+      accent: "#000080",
+      uiFont: "system",
+      style: "clear",
+      wallpaper: { kind: "color", colorA: "#008080", colorB: "#006a6a", gradStyle: "linear", gradAngle: 180, gradFlow: false },
+      ...hero({ style: "lcd" }),
+      island: { mode: "bar" }
+    },
+    {
+      id: "clay",
+      name: "Clay",
+      sub: "Soft and puffy on pastel",
+      skin: "clay",
+      layoutMode: "bento",
+      accent: "#7c5cff",
+      uiFont: "system",
+      style: "clear",
+      wallpaper: { kind: "theme", theme: "pastel" },
+      ...hero({ style: "rings", font: "rounded" }),
+      island: { mode: "island" }
+    },
+    {
+      id: "zen",
+      name: "Zen",
+      sub: "No panels, just type",
+      skin: "bare",
+      layoutMode: "row",
+      accent: "auto",
+      uiFont: "system",
+      style: "clear",
+      wallpaper: { kind: "theme", theme: "topo" },
+      ...hero({ style: "minimal", font: "system" }),
+      island: { mode: "auto" }
+    },
+    {
+      id: "space",
+      name: "Deep Space",
+      sub: "Tinted glass in a nebula",
+      skin: "glass",
+      layoutMode: "right",
+      accent: "#64d2ff",
+      uiFont: "system",
+      style: "tinted",
+      wallpaper: { kind: "theme", theme: "nebula" },
+      ...hero({ style: "analog", numerals: "none" }),
+      island: { mode: "island" }
+    },
+    {
+      id: "acid",
+      name: "Acid",
+      sub: "Flip clock on plasma",
+      skin: "neon",
+      layoutMode: "bento",
+      accent: "#c6ff00",
+      uiFont: "mono",
+      style: "clear",
+      wallpaper: { kind: "theme", theme: "acid" },
+      ...hero({ style: "flip", font: "mono" }),
+      island: { mode: "island" }
+    },
+    {
+      id: "lava",
+      name: "Lava Lamp",
+      sub: "Glass sidebar, warm blobs",
+      skin: "glass",
+      layoutMode: "left",
+      accent: "#ff9e00",
+      uiFont: "rounded",
+      style: "clear",
+      wallpaper: { kind: "theme", theme: "lava" },
+      ...hero({ style: "stacked", font: "rounded", align: "left" }),
+      island: { mode: "island" }
+    }
+  ];
+  function applyLook(id) {
+    const L = LOOKS.find((l) => l.id === id);
+    if (!L) return;
+    const { id: _, name, sub, ...patch } = L;
+    set("positions", {}, { silent: true });
+    update({ ...patch, look: id });
+  }
+
   // src/js/shell/settings-window.js
-  init_media();
   init_player();
   init_store();
   var SECTIONS = [
+    ["themes", "Themes", "#ff2d55"],
     ["widgets", "Widgets", "#0a84ff"],
     ["glass", "Glass", "#5e5ce6"],
     ["cards", "Cards", "#bf5af2"],
@@ -3338,10 +3993,43 @@
   var pct = (v) => Math.round(v * 100) + "%";
   var TITLED = ["world", "reminders", "notes", "focus", "system"];
   var COLORS = ["#ffffff", "#1d1d1f", "#ffd60a", "#ff9f0a", "#ff375f", "#bf5af2", "#5e5ce6", "#0a84ff", "#64d2ff", "#30d158"];
-  var GRADIENTS = [["#1f2a6b", "#e0707a"], ["#0f2027", "#2c5364"], ["#ff9a8b", "#ff6a88"], ["#355c7d", "#c06c84"], ["#11998e", "#38ef7d"], ["#232526", "#414345"], ["#fc5c7d", "#6a82fb"], ["#f7971e", "#ffd200"]];
+  var GRADIENTS = [
+    ["#1f2a6b", "#e0707a"],
+    ["#0f2027", "#2c5364"],
+    ["#ff9a8b", "#ff6a88"],
+    ["#355c7d", "#c06c84"],
+    ["#11998e", "#38ef7d"],
+    ["#232526", "#414345"],
+    ["#fc5c7d", "#6a82fb"],
+    ["#f7971e", "#ffd200"],
+    ["#8e2de2", "#4a00e0"],
+    ["#00c6ff", "#0072ff"],
+    ["#f953c6", "#b91d73"],
+    ["#a8e063", "#56ab2f"],
+    ["#ffecd2", "#fcb69f"],
+    ["#e0eafc", "#cfdef3"],
+    ["#141e30", "#243b55"],
+    ["#ee0979", "#ff6a00"]
+  ];
+  var ACCENTS = ["#0a84ff", "#5e5ce6", "#bf5af2", "#ff2d55", "#ff375f", "#ff9f0a", "#ffd60a", "#30d158", "#64d2ff", "#ff2bd6", "#c6ff00", "#111111"];
+  var CITIES = ["London", "New York", "Los Angeles", "Toronto", "São Paulo", "Paris", "Berlin", "Madrid", "Istanbul", "Dubai", "Karachi", "Lahore", "Islamabad", "Delhi", "Mumbai", "Singapore", "Tokyo", "Seoul", "Sydney", "Cairo", "Lagos", "Riyadh"];
+  var RESETS = {
+    themes: ["look", "skin", "layoutMode", "accent", "uiFont"],
+    widgets: ["widgets", "lockLayout", "positions"],
+    glass: ["glass", "style"],
+    cards: ["cards"],
+    wallpaper: ["wallpaper"],
+    island: ["island"],
+    dock: ["dock"],
+    clock: ["clock", "hero", "calendar", "cities"],
+    music: ["music"],
+    viz: ["viz"],
+    weather: ["city", "unit", "geo"],
+    access: ["reduce", "keyboard"]
+  };
   function initSettings({ resetLayout: resetLayout2 }) {
     const win = $("#settings"), side = $("#setSide"), main = $("#setMain");
-    let current_ = "widgets", trigger = null, cardSel = "music", clockTarget = "hero", cleanup = [];
+    let current_ = "themes", trigger = null, cardSel = "music", clockTarget = "hero", cleanup = [], cityResults = null, cityStatus = "";
     SECTIONS.forEach(([id, name, color]) => {
       const b = el("button", "set-nav");
       b.setAttribute("role", "tab");
@@ -3481,12 +4169,37 @@
       return b;
     };
     const WE2 = inWallpaperEngine;
+    const heroSpots = () => {
+      const g = el("div", "spots");
+      g.setAttribute("aria-label", "Clock position");
+      const cur = cfg.positions.hero;
+      ["tl", "tc", "tr", "ml", "mc", "mr", "bl", "bc", "br"].forEach((k) => {
+        const b = btn("", () => {
+          placeHeroAt(k);
+          g.querySelectorAll(".spot").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+        }, "spot");
+        b.setAttribute("aria-label", { t: "Top", m: "Middle", b: "Bottom" }[k[0]] + " " + { l: "left", c: "centre", r: "right" }[k[1]]);
+        b.setAttribute("aria-pressed", "false");
+        g.append(b);
+      });
+      const auto = btn("Auto", () => {
+        placeHeroAt("auto");
+        g.querySelectorAll(".spot").forEach((x) => x.setAttribute("aria-pressed", String(x === auto)));
+      }, "spot auto");
+      auto.setAttribute("aria-pressed", String(!cur));
+      g.append(auto);
+      return g;
+    };
     const views2 = {
       widgets() {
         main.append(group("On the desktop", WIDGETS.map(([id, name, sub]) => sw(name, `widgets.${id}`, sub))));
-        main.append(el("p", "group-note", "Drag any card to move it. It snaps to screen edges and to other cards, and stays where you leave it."));
+        main.append(group(
+          "Arrange",
+          [chipRow("Layout", "layoutMode", LAYOUTS2, "Where cards go until you drag them"), sw("Lock layout", "lockLayout", "Stops cards and the clock from being dragged by accident")],
+          "Drag any card to move it. It snaps to screen edges and to other cards, and stays where you leave it. Tidy up puts every card back into the layout."
+        ));
         const br = el("div", "btn-row");
-        br.append(btn("Reset layout", resetLayout2), btn("Customize a card", () => render("cards")));
+        br.append(btn("Tidy up", resetLayout2), btn("Customize a card", () => render("cards")));
         main.append(br);
       },
       glass() {
@@ -3594,7 +4307,7 @@
             const c = el("canvas");
             c.width = 160;
             c.height = 100;
-            drawWaves(c.getContext("2d"), 160, 100, t2, 0);
+            drawTheme(c.getContext("2d"), 160, 100, t2, 3);
             b.append(c, th.name);
             b.onclick = () => {
               S("wallpaper.theme", t2);
@@ -3603,49 +4316,72 @@
             walls.append(b);
           });
           main.append(el("div", "group-label", "Theme"), walls);
-          main.append(group("Motion", [sw("Animate", "wallpaper.motion"), rng2("Speed", "wallpaper.speed", 0.2, 3, 0.1, "×"), seg("Frame rate", "wallpaper.fps", [["30", "30"], ["60", "60"], ["120", "120"]]), sw("React to sound", "wallpaper.audioReactive", "Waves move with the music")]));
+          main.append(group("Motion", [sw("Animate", "wallpaper.motion"), rng2("Speed", "wallpaper.speed", 0.2, 3, 0.1, "×"), seg("Frame rate", "wallpaper.fps", [["30", "30"], ["60", "60"], ["120", "120"]]), sw("React to sound", "wallpaper.audioReactive", "Moves with the music")]));
         }
-        if (k === "image" || k === "gif" || k === "video") {
-          const name = k === "video" ? "Video" : k === "gif" ? "GIF" : "Image";
-          main.append(group("File", [
-            WE2() ? row(name, "Choose it in Wallpaper Engine’s properties panel") : row(
-              name,
-              wpMedia.main ? "A file is set" : "No file yet",
-              btn("Choose…", () => pickFile(k === "video" ? "video/*" : "image/*", false, async ([f]) => {
-                const kind = await setMainFile(f);
-                S("wallpaper.kind", kind);
-                render("wallpaper");
-              }))
-            ),
-            seg("Fit", "wallpaper.fit", [["cover", "Fill"], ["contain", "Fit"]])
-          ]));
+        if (k === "image" || k === "gif" || k === "video" || k === "slideshow") {
+          const type = k === "slideshow" ? "slides" : k, items = mediaItems(type), noun = { image: "images", gif: "GIFs", video: "videos", slides: "images" }[type];
+          const grid = el("div", "group media-grid");
+          const chosen = cfg.wallpaper.media, active = items.find((i) => i.id === chosen) || items[0];
+          items.forEach((it) => {
+            const t2 = el("div", "media-tile");
+            t2.setAttribute("role", k === "slideshow" ? "listitem" : "radio");
+            if (k !== "slideshow") {
+              t2.setAttribute("aria-checked", String(it === active));
+              t2.tabIndex = 0;
+              t2.onclick = () => {
+                update({ wallpaper: { media: it.id } }, SRC);
+                render("wallpaper", true);
+              };
+            }
+            const th = it.type === "video" ? Object.assign(el("video"), { muted: true, preload: "metadata", src: it.url + "#t=1" }) : Object.assign(el("img"), { src: it.url, alt: "", loading: "lazy" });
+            t2.append(th, el("span", "media-badge", it.type === "gif" ? "GIF" : it.type === "video" ? "Video" : it.source === "we" ? "Folder" : ""));
+            t2.title = it.name;
+            if (it.source === "local") {
+              const x = btn("✕", async (e) => {
+                e.stopPropagation();
+                await removeMedia(it.id);
+                render("wallpaper", true);
+              }, "media-del");
+              x.setAttribute("aria-label", "Remove " + it.name);
+              t2.append(x);
+            }
+            grid.append(t2);
+          });
+          if (!WE2()) {
+            const add = btn("", () => pickFile(k === "video" ? "video/*" : k === "gif" ? "image/gif" : "image/*", true, async (l) => {
+              const added = await addMedia(l);
+              const first = added.find((a) => type === "slides" ? a.type !== "video" : a.type === type);
+              if (first && k !== "slideshow") update({ wallpaper: { media: first.id } }, SRC);
+              render("wallpaper", true);
+            }), "media-tile add");
+            add.innerHTML = `<span>＋</span><small>Add ${noun}</small>`;
+            grid.append(add);
+          }
+          if (!items.length && WE2()) grid.append(el("p", "group-note", `No ${noun} yet.`));
+          main.append(el("div", "group-label", k === "slideshow" ? `Slideshow (${items.length} images)` : "Choose"), grid);
+          main.append(el("p", "group-note", WE2() ? "In Wallpaper Engine’s properties panel, choose a Wallpapers folder once. Every image, GIF and video in it shows up here." : "Files you add stay in this browser. You can also drop files anywhere on the desktop."));
+          main.append(group("Options", [k === "slideshow" && rng2("Change every", "wallpaper.slideEvery", 5, 600, 5, "s"), seg("Fit", "wallpaper.fit", [["cover", "Fill"], ["contain", "Fit"]])]));
         }
         if (k === "color") {
-          const pre = el("div", "chips");
+          const W2 = cfg.wallpaper, pre = el("div", "group grad-grid");
           GRADIENTS.forEach(([a, b]) => {
             const p = btn("", () => {
               update({ wallpaper: { colorA: a, colorB: b } }, SRC);
               render("wallpaper", true);
-            }, "grad");
-            p.style.background = `linear-gradient(160deg, ${a}, ${b})`;
+            }, "grad-tile");
+            p.style.background = gradient({ ...W2, colorA: a, colorB: b, gradFlow: false });
             p.setAttribute("aria-label", `Gradient ${a} to ${b}`);
+            p.setAttribute("aria-pressed", String(W2.colorA === a && W2.colorB === b));
             pre.append(p);
           });
-          main.append(group("Colours", [stack("Presets", null, pre), stack("From", null, swatches("From", "wallpaper.colorA", { colors: [.../* @__PURE__ */ new Set([...GRADIENTS.map((g) => g[0]), ...COLORS])].slice(0, 12) })), stack("To", null, swatches("To", "wallpaper.colorB", { colors: [.../* @__PURE__ */ new Set([...GRADIENTS.map((g) => g[1]), ...COLORS])].slice(0, 12) }))]));
+          main.append(el("div", "group-label", "Presets"), pre);
+          main.append(group("Style", [
+            seg("Shape", "wallpaper.gradStyle", [["linear", "Linear"], ["radial", "Radial"], ["mesh", "Mesh"], ["conic", "Conic"]], null, () => render("wallpaper", true)),
+            W2.gradStyle !== "radial" && rng2("Angle", "wallpaper.gradAngle", 0, 360, 5, "°"),
+            sw("Slow flow", "wallpaper.gradFlow", "The colours drift gently")
+          ]));
+          main.append(group("Colours", [stack("From", null, swatches("From", "wallpaper.colorA", { colors: [.../* @__PURE__ */ new Set([...GRADIENTS.map((g) => g[0]), ...COLORS])].slice(0, 14) })), stack("To", null, swatches("To", "wallpaper.colorB", { colors: [.../* @__PURE__ */ new Set([...GRADIENTS.map((g) => g[1]), ...COLORS])].slice(0, 14) }))]));
         }
-        if (k === "slideshow") main.append(group("Slideshow", [
-          WE2() ? row("Images", "Choose a slideshow folder in Wallpaper Engine’s properties panel") : row("Images", `${wpMedia.slides.length} added`, btn("Add images…", () => pickFile("image/*", true, async (l) => {
-            await addSlides(l);
-            bus.emit("wallpaper:media");
-            render("wallpaper");
-          }))),
-          !WE2() && row("Clear images", null, btn("Clear", async () => {
-            await clearSlides();
-            render("wallpaper");
-          })),
-          rng2("Change every", "wallpaper.slideEvery", 5, 600, 5, "s"),
-          seg("Fit", "wallpaper.fit", [["cover", "Fill"], ["contain", "Fit"]])
-        ]));
         main.append(group("Look", [rng2("Dim", "wallpaper.dim", 0, 0.8, 0.02, "", pct)]));
       },
       island() {
@@ -3653,13 +4389,20 @@
           "Top bar",
           [
             seg("Mode", "island.mode", [["island", "Island"], ["bar", "Full bar"], ["auto", "Auto-hide"], ["hidden", "Hidden"]]),
-            sw("Expand on hover", "island.expandOnHover", "Shows now playing and quick actions"),
-            sw("Show time", "island.showTime"),
-            sw("Show seconds", "island.seconds"),
-            sw("Show weather", "island.showWeather")
+            sw("Expand on hover", "island.expandOnHover", "Shows now playing and quick actions")
           ],
-          "Auto-hide slides the island in when the pointer touches the top edge. When hidden, right-click the desktop for menus. Time and date format are in Clock."
+          "Auto-hide slides the island in when the pointer touches the top edge. When hidden, right-click the desktop for menus."
         ));
+        main.append(group("Show in the island", [
+          sw("Time", "island.showTime"),
+          sw("Seconds", "island.seconds"),
+          sw("Weather", "island.showWeather"),
+          sw("Now playing", "island.showNowPlaying"),
+          sw("Network", "island.showNetwork"),
+          sw("Control Center button", "island.showCC"),
+          sw("Menu button (•••)", "island.showMenu", "Right-click the desktop for the same menu"),
+          seg("Battery", "island.battery", [["off", "Off"], ["percent", "87%"], ["icon", "Icon"], ["both", "Both"], ["inside", "In icon"]], "Desktop PCs without a battery report 100%")
+        ], "Time and date format are in Clock."));
       },
       dock() {
         main.append(group("Shortcut bar", [seg("Show", "dock.mode", [["hidden", "Hidden"], ["auto", "Auto-hide"], ["always", "Always"]])]));
@@ -3808,13 +4551,13 @@
             rng2("Opacity", "hero.opacity", 0.2, 1, 0.05, "", pct),
             rng2("Shadow", "hero.shadow", 0, 1, 0.05, "", pct),
             sw("Glass plate", "hero.plate", "Puts the clock on a pane of glass"),
-            seg("Align", "hero.align", [["left", "Left"], ["center", "Centre"], ["right", "Right"]]),
-            row("Position", "Drag the desktop clock to move it", btn("Centre it", () => U("positions.hero"), "pill small"))
+            seg("Text align", "hero.align", [["left", "Left"], ["center", "Centre"], ["right", "Right"]]),
+            stack("Position", "Or drag the clock anywhere", heroSpots())
           ]));
         } else if (clockTarget === "card") {
           main.append(group(
             "Clock card",
-            [sw("Show card", "widgets.clock"), ...styleRows("clock", [rng2("Size", "clock.size", 0.6, 1.6, 0.05, "×")])],
+            [sw("Show card", "widgets.clock"), ...styleRows("clock", [rng2("Size", "clock.size", 0.6, 1.6, 0.05, "×"), seg("Align", "clock.align", [["left", "Left"], ["center", "Centre"], ["right", "Right"]])])],
             cfg.widgets.clock ? "Glass, width and text colour are in Cards." : "The card is hidden; turn on Show card to see it on the desktop."
           ));
         } else {
@@ -3878,15 +4621,62 @@
         ]));
       },
       weather() {
+        const cur = cfg.geo && cfg.geo.name === cfg.city ? cfg.geo.label : cfg.city;
         const form = el("form", "row");
-        form.innerHTML = `<label class="label" for="cityIn">City</label><input class="field" id="cityIn" autocomplete="off" style="max-width:220px"><button class="pill" type="submit">Update</button>`;
-        form.querySelector("input").value = cfg.city;
-        form.onsubmit = (e) => {
+        const inp = el("input", "field");
+        inp.id = "cityIn";
+        inp.autocomplete = "off";
+        inp.placeholder = "Search a city";
+        inp.setAttribute("aria-label", "City");
+        form.append(el("span", "label", "Search"), inp, btn("Search", null));
+        form.lastChild.type = "submit";
+        form.onsubmit = async (e) => {
           e.preventDefault();
-          const v = form.querySelector("input").value.trim();
-          if (v) update({ city: v });
+          const q = inp.value.trim();
+          if (!q) return;
+          cityStatus = "Searching…";
+          cityResults = null;
+          render("weather", true);
+          try {
+            cityResults = await searchCities(q);
+            cityStatus = cityResults.length ? "" : `No city called “${q}”.`;
+          } catch {
+            cityStatus = "Search needs an internet connection.";
+          }
+          render("weather", true);
         };
-        main.append(group("Location", [form, seg("Units", "unit", [["c", "°C"], ["f", "°F"]])], WE2() ? "Wallpaper Engine doesn’t pass typing to wallpapers; set the city in its properties panel." : "Weather comes from Open-Meteo."));
+        const pick = (r) => {
+          cityResults = null;
+          cityStatus = "";
+          update({ city: r.name, geo: r }, SRC);
+          render("weather", true);
+        };
+        const results = el("div", "chips");
+        (cityResults || []).forEach((r) => {
+          const b = btn(r.label, () => pick(r), "chip");
+          results.append(b);
+        });
+        const locate = btn("Use my location", async () => {
+          cityStatus = "Finding you…";
+          render("weather", true);
+          try {
+            pick(await locateByIP());
+          } catch {
+            cityStatus = "Couldn’t detect a location. Search or pick a city instead.";
+            render("weather", true);
+          }
+        }, "pill small");
+        main.append(group("Location", [
+          row("Current", cur, locate),
+          form,
+          cityResults && cityResults.length ? stack("Results", "Pick the right one", results) : null,
+          cityStatus ? row(cityStatus) : null,
+          stack("Popular", null, chips("Popular cities", cfg.geo ? "" : cfg.city, CITIES.map((c) => [c, c]), (c) => {
+            update({ city: c, geo: null }, SRC);
+            render("weather", true);
+          })),
+          seg("Units", "unit", [["c", "°C"], ["f", "°F"]])
+        ], keyboardOn() ? "Click the search box and type with the on-screen keyboard." : "Weather comes from Open-Meteo. “Use my location” looks up your approximate city from your internet connection."));
       },
       data() {
         main.append(el("p", "group-note", "Everything saves automatically: layout, settings, reminders, notes, playlist files and wallpaper files. It stays after closing the browser or Wallpaper Engine and after a restart, as long as that app’s storage isn’t cleared. Keep a backup to be safe."));
@@ -3916,6 +4706,42 @@
       },
       access() {
         main.append(group("Display", [sw("Reduce transparency", "reduce", "Solid surfaces instead of glass")], "Animations also calm down when your system asks for reduced motion."));
+        main.append(group("Typing", [seg("On-screen keyboard", "keyboard", [["auto", "Auto"], ["on", "Always"], ["off", "Off"]], "Auto shows it in Wallpaper Engine, which doesn’t pass key presses to wallpapers")]));
+      },
+      themes() {
+        const looks = el("div", "looks");
+        LOOKS.forEach((L) => {
+          const b = el("button", "look-tile");
+          b.type = "button";
+          b.setAttribute("aria-pressed", String(cfg.look === L.id));
+          const pv = el("div", "look-pv");
+          pv.dataset.skin = L.skin;
+          pv.dataset.layout = L.layoutMode;
+          if (L.accent !== "auto") pv.style.setProperty("--accent", L.accent);
+          if (L.wallpaper.kind === "theme") {
+            const c = el("canvas");
+            c.width = 200;
+            c.height = 120;
+            drawTheme(c.getContext("2d"), 200, 120, L.wallpaper.theme, 3);
+            pv.append(c);
+          } else pv.style.background = gradient({ ...DEFAULTS.wallpaper, ...L.wallpaper });
+          const cards = el("div", "lp-cards");
+          for (let i = 0; i < 3; i++) cards.append(el("span", "lp-card"));
+          pv.append(el("span", "lp-clock", L.hero.style === "words" ? "four" : L.hero.style === "analog" ? "◷" : "9:41"), cards);
+          b.append(pv, el("b", null, L.name), el("small", null, L.sub));
+          b.onclick = () => {
+            applyLook(L.id);
+            render("themes", true);
+          };
+          looks.append(b);
+        });
+        main.append(el("div", "group-label", "Presets"), looks, el("p", "group-note", "A preset sets the surface style, layout, wallpaper, clock and accent together. Fine-tune anything afterwards."));
+        main.append(group("Mix your own", [
+          chipRow("Surface style", "skin", SKINS, "Liquid Glass refracts the wallpaper; the others are solid styles"),
+          chipRow("Layout", "layoutMode", LAYOUTS2, "Where cards go until you drag them"),
+          stack("Accent colour", "Calendar today, focus ring, switches, selections", swatches("Accent", "accent", { auto: true, colors: ACCENTS })),
+          chipRow("Interface font", "uiFont", UI_FONTS.map(([v, n]) => [v, n, "font-" + v]))
+        ]));
       }
     };
     function render(sec, keepScroll) {
@@ -3927,6 +4753,17 @@
       main.textContent = "";
       main.append(el("h3", null, SECTIONS.find((s) => s[0] === current_)[1]));
       views2[current_]();
+      const keys = RESETS[current_];
+      if (keys) {
+        const name = SECTIONS.find((x) => x[0] === current_)[1];
+        const br = el("div", "btn-row tab-reset");
+        br.append(confirmBtn(`Reset ${name}`, "Click again to reset", () => {
+          keys.forEach((k) => S(k, structuredClone(DEFAULTS[k])));
+          if (current_ === "music") setIncludeBuiltin(true);
+          render(current_, true);
+        }));
+        main.append(br);
+      }
       main.scrollTop = keepScroll ? scroll : 0;
     }
     function open2(sec, from, card) {
@@ -3978,7 +4815,7 @@
   };
   attach($("#vizCard"), {});
   attach($("#edgeViz"), { align: "bottom" });
-  var hero = clockFace($("#heroFace"), heroClockOpts);
+  var hero2 = clockFace($("#heroFace"), heroClockOpts);
   var settings = initSettings({ resetLayout });
   var cc = initControlCenter();
   var openSettings = (sec, from, card) => {
@@ -4012,12 +4849,14 @@
       { label: "Shortcut Bar", checked: cfg.dock.mode !== "hidden", action: () => set("dock.mode", cfg.dock.mode === "hidden" ? "always" : "hidden") },
       { label: "Desktop Clock", checked: cfg.hero.show, action: () => set("hero.show", !cfg.hero.show) },
       "-",
-      { label: "Reset Layout", action: resetLayout }
+      { label: "Lock Layout", checked: cfg.lockLayout, action: () => set("lockLayout", !cfg.lockLayout) },
+      { label: "Tidy Up Layout", action: resetLayout }
     ], at, "Desktop");
   }
   var island = initIsland({ openMenu: mainMenu, openSettings, toggleCC: (from) => cc.toggle(from) });
   initDock(actions);
   enableDragging();
+  initKeyboard();
   addEventListener("contextmenu", (e) => {
     if (e.target.closest("input, textarea, .menu, #settings, #cc")) return;
     e.preventDefault();
@@ -4057,9 +4896,8 @@
     if (!fl.length) return;
     const media = fl.find((f) => /^(image|video)\//.test(f.type));
     if (media) {
-      const { setMainFile: setMainFile2 } = await Promise.resolve().then(() => (init_media(), media_exports));
-      const kind = await setMainFile2(media);
-      set("wallpaper.kind", kind);
+      const [it] = await addMedia(fl.filter((f) => /^(image|video)\//.test(f.type)));
+      if (it) update({ wallpaper: { kind: it.type, media: it.id } });
     }
     if (fl.some((f) => f.type.startsWith("audio/"))) {
       const { addFiles: addFiles2 } = await Promise.resolve().then(() => (init_player(), player_exports));
@@ -4097,6 +4935,7 @@
       prop("--card-pad", c.pad != null ? c.pad + "px" : null);
     });
   }
+  var lastKind = "";
   function applyWallpaper() {
     const w = cfg.wallpaper, root = document.documentElement;
     const th = THEMES[w.theme] || THEMES.dusk;
@@ -4104,15 +4943,36 @@
     root.style.setProperty("--page", w.kind === "theme" ? th.bg : "#111");
     root.style.setProperty("--hero-ink", w.kind === "theme" ? th.hero : "#fff");
     wall.set({ ...w, motion: w.motion && !reducedMotion() });
-    if (w.kind === "image" || w.kind === "gif") wall.media("image", wpMedia.main && !wpMedia.mainType.startsWith("video") ? wpMedia.main : wpMedia.we.image);
-    if (w.kind === "video") wall.media("video", wpMedia.main && wpMedia.mainType.startsWith("video") ? wpMedia.main : wpMedia.we.video);
-    if (w.kind === "slideshow") wall.setSlides(wpMedia.slides.length ? wpMedia.slides : wpMedia.we.folder);
+    const pick = (type) => {
+      const it = findMedia(w.media);
+      if (it && it.type === type) return it.url;
+      const first = mediaItems(type)[0];
+      return first ? first.url : "";
+    };
+    if (w.kind === "image" || w.kind === "gif") wall.media("image", pick(w.kind));
+    if (w.kind === "video") wall.media("video", pick("video"));
+    if (w.kind === "slideshow") {
+      const slides = mediaItems("slides").map((i) => i.url);
+      if (slides.join() !== wall.slides.join() || lastKind !== "slideshow") wall.setSlides(slides);
+    }
+    lastKind = w.kind;
     $("#dim").style.opacity = String(w.dim);
   }
   function applyMisc() {
     const root = document.documentElement;
     root.dataset.style = cfg.style;
     root.dataset.reduce = String(cfg.reduce);
+    root.dataset.skin = cfg.skin || "glass";
+    if (cfg.uiFont && cfg.uiFont !== "system") root.dataset.uifont = cfg.uiFont;
+    else delete root.dataset.uifont;
+    if (cfg.accent && cfg.accent !== "auto") {
+      const [r, g, b] = [1, 3, 5].map((i) => parseInt(cfg.accent.slice(i, i + 2), 16) / 255);
+      root.style.setProperty("--accent", cfg.accent);
+      root.style.setProperty("--on-accent", 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.6 ? "#111" : "#fff");
+    } else {
+      root.style.removeProperty("--accent");
+      root.style.removeProperty("--on-accent");
+    }
     const h = $("#hero"), hc = cfg.hero;
     h.hidden = !hc.show;
     h.classList.toggle("plate", !!hc.plate);
@@ -4146,14 +5006,18 @@
   bus.on("settings", ({ patch }) => {
     if (patch.glass || "reduce" in patch || patch.cards) applyGlass();
     if (patch.wallpaper) applyWallpaper();
-    if (patch.hero || patch.viz || "style" in patch || "reduce" in patch) {
+    if (patch.hero || patch.viz || "style" in patch || "reduce" in patch || "skin" in patch || "accent" in patch || "uiFont" in patch) {
       applyMisc();
       tick(true);
       requestAnimationFrame(heroRefresh);
     }
     if (patch.widgets) syncWidgets();
     if (patch.cards || patch.dock) layout({ animate: true });
-    if (patch.positions) layout({ animate: true });
+    if (patch.positions || "layoutMode" in patch) layout({ animate: true });
+    if ("skin" in patch || "uiFont" in patch) requestAnimationFrame(() => {
+      layout({ animate: true });
+      refresh();
+    });
     if (patch.clock) {
       tick(true);
       W.world.render();
@@ -4194,7 +5058,7 @@
     clockseconds: (v) => ({ hero: { seconds: !!v } }),
     clockplate: (v) => ({ hero: { plate: !!v } }),
     clock24: (v) => ({ clock: { h24: !!v } }),
-    city: (v) => ({ city: String(v || "London") }),
+    city: (v) => ({ city: String(v || "London"), geo: null }),
     units: (v) => ({ unit: v }),
     musicsource: (v) => ({ music: { source: v } }),
     reducetransparency: (v) => ({ reduce: !!v })
@@ -4211,10 +5075,10 @@
       else if (k.startsWith("show") && k.slice(4) in cfg.widgets) merge2(patch, { widgets: { [k.slice(4)]: !!v } });
       else if (k === "customimage") {
         wpMedia.we.image = v ? "file:///" + v : "";
-        if (v) merge2(patch, { wallpaper: { kind: /\.gif$/i.test(v) ? "gif" : "image" } });
+        if (v) merge2(patch, { wallpaper: { kind: /\.gif$/i.test(v) ? "gif" : "image", media: "we:image" } });
       } else if (k === "customvideo") {
         wpMedia.we.video = v ? "file:///" + v : "";
-        if (v) merge2(patch, { wallpaper: { kind: "video" } });
+        if (v) merge2(patch, { wallpaper: { kind: "video", media: "we:video" } });
       } else if (k === "reminders") bus.emit("reminders:set", v);
       else if (k === "notes") {
         if (v || cfg.weLast.notes) bus.emit("notes:set", String(v || ""));
@@ -4227,11 +5091,8 @@
     applyWallpaper();
   });
   bus.on("we:dir", ({ name, files: files2 }) => {
-    if (name === "musicfolder") setWEFolder(files2);
-    if (name === "wallpaperfolder") {
-      wpMedia.we.folder = files2.filter((f) => /\.(jpe?g|png|webp|gif|bmp)$/i.test(f)).map((f) => "file:///" + f);
-      applyWallpaper();
-    }
+    if (name === "musicfolder") setWEFolder2(files2);
+    if (name === "wallpaperfolder") setWEFolder(files2);
   });
   bus.on("we:fps", (fps) => set("wallpaper.fps", Math.max(10, Math.min(144, fps)), { silent: true }));
   bus.on("we:paused", (p) => {
@@ -4243,7 +5104,7 @@
   function tick(force) {
     const now = /* @__PURE__ */ new Date();
     if (cfg.widgets.clock) W.clock.tick(now);
-    if (cfg.hero.show) hero.tick(now);
+    if (cfg.hero.show) hero2.tick(now);
     island.tick(now);
     W.focus.tick();
     if (force || now.getMinutes() !== lastMin) {

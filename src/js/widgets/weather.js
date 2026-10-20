@@ -29,14 +29,26 @@ export function codeInfo(code, day = true) {
   return ["cloud", "Cloudy"];
 }
 
+/** City search for Settings: [{name, latitude, longitude, label}] */
+export async function searchCities(q) {
+  const g = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=8`).then(r => r.json());
+  return (g.results || []).map(r => ({ name: r.name, latitude: r.latitude, longitude: r.longitude, label: [r.name, r.admin1, r.country_code].filter(Boolean).join(", ") }));
+}
+/** Approximate location from the network (no permission prompt; works in Wallpaper Engine). */
+export async function locateByIP() {
+  const r = await fetch("https://ipapi.co/json/").then(r => r.json());
+  if (!r || !r.city) throw new Error("unknown");
+  return { name: r.city, latitude: r.latitude, longitude: r.longitude, label: [r.city, r.region, r.country_code].filter(Boolean).join(", ") };
+}
+
 export function mountWeather(pane) {
   pane.innerHTML = `<div class="wx-top"><div><div class="wx-city"></div><div class="wx-temp num"></div></div>
     <div class="wx-cond"><span class="wx-icon"></span><span class="wx-label">Loading</span><div class="soft num wx-hilo"></div></div></div>
     <div class="wx-hours num"></div><div class="wx-note"></div>`;
   const q = s => pane.querySelector(s);
   let timer, last = null;
-  const render = (d, live) => {
-    last = [d, live];
+  const render = (d, live, reason) => {
+    last = [d, live, reason];
     q(".wx-city").textContent = d.city; q(".wx-temp").textContent = Math.round(d.temp) + "°";
     const [ic, label] = codeInfo(d.code, d.isDay);
     q(".wx-icon").innerHTML = icon(ic, 30); q(".wx-label").textContent = label;
@@ -49,7 +61,7 @@ export function mountWeather(pane) {
       hrs.append(c);
     });
     const note = q(".wx-note");
-    note.textContent = live ? `Updated ${fmtTime(new Date())} · Open-Meteo` : "Sample forecast. Live weather can’t load in this view; it works in Wallpaper Engine and when the file is opened directly.";
+    note.textContent = live ? `Updated ${fmtTime(new Date())} · Open-Meteo` : reason === "city" ? `Couldn’t find “${cfg.city}”. Pick a city in Settings › Weather. Showing a sample.` : "Sample forecast. Live weather can’t load right now (offline?). It retries every few minutes.";
     note.classList.toggle("warn", !live);
     bus.emit("weather", { temp: d.temp, code: d.code, isDay: d.isDay, live });
     bus.emit("layout");
@@ -61,17 +73,23 @@ export function mountWeather(pane) {
   };
   async function load() {
     clearTimeout(timer);
+    let notFound = false;
     try {
       const ctl = new AbortController(); setTimeout(() => ctl.abort(), 7000);
-      const g = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(cfg.city)}&count=1`, { signal: ctl.signal }).then(r => r.json());
-      if (!g.results || !g.results.length) throw new Error("No such city");
-      const p = g.results[0], u = cfg.unit === "f" ? "&temperature_unit=fahrenheit" : "";
+      /* a city picked from search results carries its coordinates; a typed name is looked up */
+      let p = cfg.geo && cfg.geo.name === cfg.city ? cfg.geo : null;
+      if (!p) {
+        const g = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(cfg.city)}&count=1`, { signal: ctl.signal }).then(r => r.json());
+        if (!g.results || !g.results.length) { notFound = true; throw new Error("No such city"); }
+        p = { name: g.results[0].name, latitude: g.results[0].latitude, longitude: g.results[0].longitude };
+      }
+      const u = cfg.unit === "f" ? "&temperature_unit=fahrenheit" : "";
       const f = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${p.latitude}&longitude=${p.longitude}&current=temperature_2m,weather_code,is_day&hourly=temperature_2m,weather_code,is_day&daily=temperature_2m_max,temperature_2m_min&forecast_days=2&timezone=auto${u}`, { signal: ctl.signal }).then(r => r.json());
       let idx = f.hourly.time.findIndex(t => t.slice(0, 13) === f.current.time.slice(0, 13)); if (idx < 0) idx = 0;
       const hours = [0, 1, 2, 3, 4, 5].map(i => ({ time: new Date(Date.now() + i * 3600e3), temp: f.hourly.temperature_2m[idx + i], code: f.hourly.weather_code[idx + i], isDay: !!f.hourly.is_day[idx + i] }));
       render({ city: p.name, temp: f.current.temperature_2m, code: f.current.weather_code, isDay: !!f.current.is_day, hi: f.daily.temperature_2m_max[0], lo: f.daily.temperature_2m_min[0], hours }, true);
       timer = setTimeout(load, 15 * 60e3);
-    } catch { render(sample(), false); timer = setTimeout(load, 5 * 60e3); }
+    } catch { render(sample(), false, notFound ? "city" : "net"); timer = setTimeout(load, 5 * 60e3); }
   }
   load();
   return { load, render: () => last && render(...last) };

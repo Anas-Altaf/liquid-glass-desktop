@@ -1,0 +1,101 @@
+/* Skins: surface styles other than Liquid Glass. Each one swaps the glass
+ * layers for its own surface (--sk-*) and its own ink and type. Layout,
+ * accent and wallpaper are independent of the skin. */
+:root:not([data-skin="glass"]) .lg-warp, :root:not([data-skin="glass"]) .lg-sheen, :root:not([data-skin="glass"]) .lg-rim { display: none; }
+:root:not([data-skin="glass"]) :is(.lg-panel, .lg-bar, .lg-menu, .lg-control) { background: var(--sk-bg); border: var(--sk-border); box-shadow: var(--sk-shadow); border-radius: var(--sk-radius); }
+:root:not([data-skin="glass"]) .tile { border-radius: var(--sk-radius-sm, var(--sk-radius)); }
+:root:not([data-skin="glass"]) #hero:not(.plate) { background: none; border: 0; box-shadow: none; }
+:root:not([data-skin="glass"]) .seg-drop { background: var(--sk-sel, var(--wash-strong)); }
+:root:not([data-skin="glass"]) .slider.active .sl-knob { opacity: 1; transform: none; }
+:root:not([data-skin="glass"]) .switch.pressing .sw-knob { background: #fff; }
+:root:not([data-skin="glass"]) .cc .tile { box-shadow: none; }
+
+/* ---------- Brutalist: flat, loud, square, hard shadows ---------- */
+:root[data-skin="brutal"] {
+  --sk-bg: #fffdf2; --sk-border: 3px solid #111; --sk-shadow: 7px 7px 0 #111; --sk-radius: 0px; --sk-sel: #111;
+  --ink: #111; --ink-soft: rgba(17, 17, 17, .78); --ink-faint: rgba(17, 17, 17, .55);
+  --wash: rgba(17, 17, 17, .07); --wash-strong: rgba(17, 17, 17, .14); --track-bg: rgba(17, 17, 17, .18); --lift: none; --solid: #fffdf2;
+  --font: "JetBrains Mono", ui-monospace, Consolas, monospace; --font-display: "JetBrains Mono", ui-monospace, Consolas, monospace;
+  color-scheme: light;
+}
+:root[data-skin="brutal"] .seg button[aria-checked="true"] { color: #fff; }
+:root[data-skin="brutal"] :is(.pill, .chip, .field, .seg, .seg button, .seg-drop, .switch, .sw-knob, .icon-btn, .group, .app, .rm-check, .kb-key, .notes, .sys-cell, .mu-art canvas, .mu-art img, .cal-grid .d, .set-nav, .menu-item, .tile-btn .ic, .wall-opt canvas, .clock-preview, .swatch) { border-radius: 0 !important; }
+:root[data-skin="brutal"] :is(.pill, .chip, .kb-key) { border: 2px solid #111; box-shadow: 3px 3px 0 #111; }
+:root[data-skin="brutal"] :is(.pill, .chip, .kb-key):active { translate: 2px 2px; box-shadow: 1px 1px 0 #111; }
+:root[data-skin="brutal"] .w-title, :root[data-skin="brutal"] .group-label { text-transform: uppercase; letter-spacing: .08em; color: #111; }
+:root[data-skin="brutal"] .switch { border: 2px solid #111; }
+:root[data-skin="brutal"] .widget:hover { translate: -2px -2px; box-shadow: 9px 9px 0 #111; }
+:root[data-skin="brutal"] .widget { transition: translate .15s ease, box-shadow .15s ease; }
+
+/* ---------- Neon: dark terminal panels with glowing edges ---------- */
+:root[data-skin="neon"] {
+  --neon: var(--accent, #00e5ff);
+  --sk-bg: rgba(5, 6, 18, .86); --sk-border: 1px solid var(--neon); --sk-radius: 6px; --sk-sel: color-mix(in srgb, var(--neon) 35%, transparent);
+  --sk-shadow: 0 0 22px color-mix(in srgb, var(--neon) 45%, transparent), inset 0 0 22px color-mix(in srgb, var(--neon) 14%, transparent);
+  --ink: #dffbff; --ink-soft: rgba(223, 251, 255, .75); --ink-faint: rgba(223, 251, 255, .5);
+  --wash: rgba(223, 251, 255, .07); --wash-strong: rgba(223, 251, 255, .16); --track-bg: rgba(223, 251, 255, .16); --lift: none; --solid: #05060f;
+  --font: "JetBrains Mono", ui-monospace, Consolas, monospace; --font-display: "JetBrains Mono", ui-monospace, Consolas, monospace;
+}
+:root[data-skin="neon"] :is(.w-title, .cf-time, .cf-h, .cf-m, .wx-temp, .wc-time, .cal-month, .isl-time) { text-shadow: 0 0 10px color-mix(in srgb, var(--neon) 80%, transparent); }
+:root[data-skin="neon"] .w-title { color: var(--neon); text-transform: uppercase; letter-spacing: .12em; }
+:root[data-skin="neon"] .widget::after { content: ""; position: absolute; inset: 0; z-index: 4; pointer-events: none; border-radius: inherit; background: repeating-linear-gradient(0deg, rgba(255, 255, 255, .035) 0 1px, transparent 1px 3px); }
+:root[data-skin="neon"] :is(.pill, .chip, .field, .kb-key) { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--neon) 50%, transparent); }
+
+/* ---------- Paper: sticky notes taped to the desk ---------- */
+:root[data-skin="paper"] {
+  --sk-bg: #fbf6e8; --sk-border: 0; --sk-radius: 3px; --sk-sel: rgba(58, 47, 37, .14);
+  --sk-shadow: 0 1px 1px rgba(60, 40, 10, .08), 0 12px 26px rgba(60, 40, 10, .22);
+  --ink: #3a2f25; --ink-soft: rgba(58, 47, 37, .75); --ink-faint: rgba(58, 47, 37, .5);
+  --wash: rgba(58, 47, 37, .07); --wash-strong: rgba(58, 47, 37, .13); --track-bg: rgba(58, 47, 37, .16); --lift: none; --solid: #fbf6e8;
+  --font: Georgia, "Iowan Old Style", "Times New Roman", serif; --font-display: "Playfair Display", Georgia, serif;
+  color-scheme: light;
+}
+:root[data-skin="paper"] .widget:nth-of-type(odd) { rotate: -1.3deg; }
+:root[data-skin="paper"] .widget:nth-of-type(even) { rotate: 1deg; }
+:root[data-skin="paper"] .widget:nth-of-type(3n) { --sk-bg: #fff4b8; }
+:root[data-skin="paper"] .widget:nth-of-type(4n) { --sk-bg: #e3f1ff; }
+:root[data-skin="paper"] .widget:nth-of-type(5n) { --sk-bg: #ffe1e8; }
+:root[data-skin="paper"] .widget::before { content: ""; position: absolute; z-index: 5; top: -11px; left: 50%; width: 88px; height: 22px; translate: -50% 0; rotate: -3deg; background: rgba(255, 236, 170, .78); box-shadow: 0 1px 2px rgba(0, 0, 0, .12); pointer-events: none; }
+:root[data-skin="paper"] .widget.dragging { rotate: 0deg; }
+
+/* ---------- Retro OS: beige-grey bevels and blue title bars ---------- */
+:root[data-skin="retro"] {
+  --sk-bg: #c3c3c3; --sk-border: 2px solid; --sk-radius: 0px; --sk-sel: #000080; --sk-shadow: 1px 1px 0 #000;
+  --ink: #000; --ink-soft: rgba(0, 0, 0, .78); --ink-faint: rgba(0, 0, 0, .55);
+  --wash: rgba(0, 0, 0, .06); --wash-strong: rgba(255, 255, 255, .55); --track-bg: #808080; --lift: none; --solid: #c3c3c3;
+  --font: Tahoma, "MS Sans Serif", "Segoe UI", sans-serif; --font-display: "Arial Black", Tahoma, sans-serif;
+  color-scheme: light;
+}
+:root[data-skin="retro"] :is(.lg-panel, .lg-bar, .lg-menu, .lg-control) { border-color: #fff #404040 #404040 #fff; }
+:root[data-skin="retro"] .widget::before { content: attr(aria-label); display: block; margin: 2px 2px 0; padding: 3px 8px; background: linear-gradient(90deg, #000080, #1084d0); color: #fff; font: 700 12px Tahoma, sans-serif; position: relative; z-index: 4; }
+:root[data-skin="retro"] .widget .w-title { display: none; }
+:root[data-skin="retro"] :is(.pill, .chip, .kb-key, .icon-btn.close-x, .app) { background: #c3c3c3; color: #000; border: 2px solid; border-color: #fff #404040 #404040 #fff; border-radius: 0; box-shadow: none; }
+:root[data-skin="retro"] :is(.pill, .chip, .kb-key):active, :root[data-skin="retro"] .chip[aria-checked="true"], :root[data-skin="retro"] .chip[aria-pressed="true"] { border-color: #404040 #fff #fff #404040; background: #b0b0b0; color: #000; }
+:root[data-skin="retro"] :is(.field, .notes, .group, .clock-preview) { background: #fff; border: 2px solid; border-color: #404040 #fff #fff #404040; border-radius: 0; }
+:root[data-skin="retro"] :is(.seg, .seg button, .seg-drop, .switch, .sw-knob, .icon-btn, .set-nav, .menu-item, .cal-grid .d, .sys-cell, .rm-check, .tile-btn .ic, .swatch, .wall-opt canvas) { border-radius: 0 !important; }
+:root[data-skin="retro"] .seg button[aria-checked="true"], :root[data-skin="retro"] .set-nav[aria-selected="true"] { color: #fff; }
+:root[data-skin="retro"] .set-nav[aria-selected="true"], :root[data-skin="retro"] .menu-item:hover { background: #000080; }
+
+/* ---------- Clay: soft, puffy, pastel ---------- */
+:root[data-skin="clay"] {
+  --sk-bg: linear-gradient(145deg, #f7f4ff, #e7e4f6); --sk-border: 0; --sk-radius: 34px; --sk-radius-sm: 22px; --sk-sel: #fff;
+  --sk-shadow: 14px 14px 30px rgba(70, 60, 130, .3), -8px -8px 22px rgba(255, 255, 255, .7), inset 3px 3px 6px rgba(255, 255, 255, .9), inset -4px -4px 8px rgba(70, 60, 130, .16);
+  --ink: #2d2a4a; --ink-soft: rgba(45, 42, 74, .72); --ink-faint: rgba(45, 42, 74, .5);
+  --wash: rgba(70, 60, 130, .07); --wash-strong: rgba(255, 255, 255, .8); --track-bg: rgba(70, 60, 130, .14); --lift: none; --solid: #efedf9;
+  --font: "Nunito", ui-rounded, "Arial Rounded MT Bold", sans-serif; --font-display: "Nunito", ui-rounded, sans-serif;
+  color-scheme: light;
+}
+:root[data-skin="clay"] :is(.pill, .chip, .kb-key, .field) { box-shadow: 4px 4px 10px rgba(70, 60, 130, .18), -3px -3px 8px rgba(255, 255, 255, .8); }
+:root[data-skin="clay"] .switch { box-shadow: inset 2px 2px 5px rgba(70, 60, 130, .25); }
+
+/* ---------- Bare: no surfaces at all, just type on the wallpaper ---------- */
+:root[data-skin="bare"] { --sk-bg: none; --sk-border: 0; --sk-shadow: none; --sk-radius: 0px; --lift: 0 1px 12px rgba(0, 0, 0, .45); }
+:root[data-skin="bare"] .widget > .pane { text-shadow: 0 1px 12px rgba(0, 0, 0, .45), 0 1px 2px rgba(0, 0, 0, .3); }
+:root[data-skin="bare"] :is(#settings, .menu, #cc, .kb, .dock, .island) { --sk-bg: var(--solid); --sk-radius: 22px; --sk-shadow: 0 18px 50px rgba(0, 0, 0, .35); }
+:root[data-skin="bare"] .widget:hover { --sk-bg: rgba(0, 0, 0, .12); }
+
+/* UI font picked in Themes overrides the skin's */
+:root[data-uifont="rounded"] { --font: "Nunito", ui-rounded, sans-serif; --font-display: "Nunito", ui-rounded, sans-serif; }
+:root[data-uifont="serif"] { --font: Georgia, "Times New Roman", serif; --font-display: "Playfair Display", Georgia, serif; }
+:root[data-uifont="mono"] { --font: "JetBrains Mono", ui-monospace, Consolas, monospace; --font-display: "JetBrains Mono", ui-monospace, monospace; }
+:root[data-uifont="condensed"] { --font: "Oswald", "Bahnschrift Condensed", "Arial Narrow", sans-serif; --font-display: "Oswald", "Bahnschrift Condensed", sans-serif; }

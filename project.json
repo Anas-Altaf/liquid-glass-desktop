@@ -48,7 +48,7 @@
         "order": 2
       },
       "wallpaperfolder": {
-        "text": "Slideshow folder",
+        "text": "Wallpapers folder (images, GIFs, videos)",
         "type": "directory",
         "mode": "fetchall",
         "value": "",

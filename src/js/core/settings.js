@@ -21,23 +21,30 @@ export const DEFAULTS = {
   positions: {},                 // id -> {ax:"l"|"r", ay:"t"|"b", x, y} px from the anchored edges
   cards: {},                     // id -> per-card overrides {blur, sat, bright, tint, radius, rim, shine, refraction, width}
   glass: { blur: 14, sat: 180, bright: 1, tint: 0.06, radius: 26, rim: 0.45, shine: 0.5, refraction: 1, quality: "balanced", react: "near", reactRadius: 220, shadow: 0.24 },
-  wallpaper: { kind: "theme", theme: "dusk", motion: true, speed: 1, fps: 60, colorA: "#1f2a6b", colorB: "#e0707a", fit: "cover", slideEvery: 60, dim: 0, audioReactive: true },
-  island: { mode: "island", expandOnHover: true, showTime: true, showWeather: true, seconds: false },
+  wallpaper: { kind: "theme", theme: "dusk", motion: true, speed: 1, fps: 60, colorA: "#1f2a6b", colorB: "#e0707a", gradStyle: "linear", gradAngle: 160, gradFlow: false, fit: "cover", slideEvery: 60, dim: 0, audioReactive: true, media: "" },
+  island: { mode: "island", expandOnHover: true, showTime: true, showWeather: true, seconds: false, battery: "percent", showNetwork: true, showNowPlaying: true, showCC: true, showMenu: true },
   dock: { mode: "hidden", shortcuts: [
     { id: "s1", name: "Settings", kind: "action", target: "settings", icon: "gear" },
     { id: "s2", name: "Edit layout", kind: "action", target: "edit", icon: "grid" },
     { id: "s3", name: "Display settings", kind: "uri", target: "ms-settings:display", icon: "display" },
   ] },
   clock: { style: "digital", seconds: false, date: true, h24: !new Intl.DateTimeFormat(undefined, { hour: "numeric" }).resolvedOptions().hour12,
-    size: 1, weight: "auto", font: "system", numerals: "four", leadingZero: false, ampm: true, blink: false, dateFormat: "long" },
+    size: 1, weight: "auto", font: "system", numerals: "four", leadingZero: false, ampm: true, blink: false, dateFormat: "long", align: "left" },
   hero: { show: true, style: "digital", size: 1, date: true, weight: "auto", seconds: false, font: "system", numerals: "four", color: "auto", opacity: 1, shadow: 0.25, plate: false, align: "center" },
   calendar: { weekStart: 0 },
   music: { source: "auto", repeat: "all", shuffle: false, continuous: true, volume: 0.8, order: [] },
   viz: { card: true, island: true, edge: false, style: "bars", color: "ink", sensitivity: 1, bars: 48, edgeHeight: 90 },
   style: "clear",
+  look: "liquid",                // last preset applied in Settings › Themes
+  skin: "glass",                 // surface style: glass, brutal, neon, paper, retro, clay
+  layoutMode: "columns",         // where cards flow: columns, left, right, bento, row
+  lockLayout: false,
+  accent: "auto",
+  uiFont: "system",
+  keyboard: "auto",              // on-screen keyboard: auto (Wallpaper Engine), on, off
   reduce: false,
   focusMode: false,
-  city: "London", unit: "c",
+  city: "London", unit: "c", geo: null,   // geo: {name, latitude, longitude, label} when picked from search
   cities: ["Europe/London", "America/New_York", "Asia/Tokyo"],
   weLast: {},                    // last values seen from Wallpaper Engine's properties
   version: 2,

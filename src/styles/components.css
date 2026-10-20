@@ -29,7 +29,7 @@
 
 /* switch: knob stretches and turns to glass while pressed */
 .switch { position: relative; width: 52px; height: 32px; flex: none; border: 0; padding: 0; border-radius: 16px; background: var(--track-bg); transition: background-color .25s ease; }
-.switch[aria-checked="true"] { background: var(--green); }
+.switch[aria-checked="true"] { background: var(--accent, var(--green)); }
 .sw-knob { position: absolute; top: 3px; left: 3px; width: 26px; height: 26px; border-radius: 13px; background: #fff; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25); transition: transform .32s var(--spring), width .25s var(--spring), left .25s var(--spring), background-color .2s ease; }
 .switch[aria-checked="true"] .sw-knob { transform: translateX(20px); }
 .sw-knob > .lg-warp, .sw-knob > .lg-sheen, .sw-knob > .lg-rim { opacity: 0; transition: opacity .15s ease; }
@@ -48,7 +48,7 @@
 .menu { z-index: 60; min-width: 220px; border-radius: 18px; padding: 6px; }
 .menu > .pane { display: grid; }
 .menu-item { display: grid; grid-template-columns: 18px 1fr auto; align-items: center; gap: 6px; height: 32px; padding: 0 10px 0 8px; border: 0; border-radius: 10px; background: transparent; text-align: left; font-weight: 500; font-size: 13.5px; }
-.menu-item:hover, .menu-item:focus-visible { background: var(--blue); color: #fff; outline: none; }
+.menu-item:hover, .menu-item:focus-visible { background: var(--accent, var(--blue)); color: var(--on-accent, #fff); outline: none; }
 .menu-item:disabled { opacity: .45; }
 .menu-hint { font-size: 12px; color: var(--ink-faint); }
 .menu-item:hover .menu-hint { color: rgba(255, 255, 255, .8); }

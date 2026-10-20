@@ -50,7 +50,14 @@ export function initDock(actions) {
       row.append(b);
     });
   }
-  addEventListener("pointermove", e => { if (cfg.dock.mode === "auto") dock.classList.toggle("revealed", e.clientY > innerHeight - 12 || dock.matches(":hover")); }, { passive: true });
+  /* auto mode: reveal at the bottom edge, hide only once the pointer has clearly left */
+  let hideT = 0;
+  addEventListener("pointermove", e => {
+    if (cfg.dock.mode !== "auto") return;
+    const shown = dock.classList.contains("revealed"), reach = innerHeight - dock.offsetHeight - 50;
+    if (e.clientY > innerHeight - 12 || (shown && (e.clientY > reach || dock.matches(":hover")))) { clearTimeout(hideT); hideT = 0; if (!shown) dock.classList.add("revealed"); }
+    else if (shown && !hideT) hideT = setTimeout(() => { hideT = 0; dock.classList.remove("revealed"); }, 450);
+  }, { passive: true });
   /* magnify */
   let raf = 0, mx = null;
   dock.addEventListener("pointermove", e => { mx = e.clientX; if (!raf) raf = requestAnimationFrame(mag); });
