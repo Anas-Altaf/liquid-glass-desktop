@@ -34,8 +34,9 @@ export function mountWeather(pane) {
     <div class="wx-cond"><span class="wx-icon"></span><span class="wx-label">Loading</span><div class="soft num wx-hilo"></div></div></div>
     <div class="wx-hours num"></div><div class="wx-note"></div>`;
   const q = s => pane.querySelector(s);
-  let timer;
+  let timer, last = null;
   const render = (d, live) => {
+    last = [d, live];
     q(".wx-city").textContent = d.city; q(".wx-temp").textContent = Math.round(d.temp) + "°";
     const [ic, label] = codeInfo(d.code, d.isDay);
     q(".wx-icon").innerHTML = icon(ic, 30); q(".wx-label").textContent = label;
@@ -73,5 +74,5 @@ export function mountWeather(pane) {
     } catch { render(sample(), false); timer = setTimeout(load, 5 * 60e3); }
   }
   load();
-  return { load };
+  return { load, render: () => last && render(...last) };
 }

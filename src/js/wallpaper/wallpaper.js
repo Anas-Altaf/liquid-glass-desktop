@@ -44,7 +44,7 @@ export class Wallpaper {
     Object.assign(this.o, o);
     const k = this.o.kind;
     this.canvas.hidden = k !== "theme";
-    this.img.hidden = !(k === "image" || k === "slideshow"); this.img2.hidden = k !== "slideshow";
+    this.img.hidden = !(k === "image" || k === "gif" || k === "slideshow"); this.img2.hidden = k !== "slideshow";
     this.video.hidden = k !== "video";
     if (k !== "video") { this.video.pause(); }
     [this.img, this.img2, this.video].forEach(e => e.style.objectFit = this.o.fit);

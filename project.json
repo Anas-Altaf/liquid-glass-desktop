@@ -232,17 +232,70 @@
         ],
         "order": 17
       },
+      "clocksize": {
+        "text": "Desktop clock size",
+        "type": "slider",
+        "min": 40,
+        "max": 250,
+        "step": 5,
+        "value": 100,
+        "order": 18,
+        "condition": "desktopclock.value"
+      },
+      "clockfont": {
+        "text": "Desktop clock font",
+        "type": "combo",
+        "value": "system",
+        "order": 19,
+        "condition": "desktopclock.value",
+        "options": [
+          {
+            "label": "System",
+            "value": "system"
+          },
+          {
+            "label": "Rounded",
+            "value": "rounded"
+          },
+          {
+            "label": "Serif",
+            "value": "serif"
+          },
+          {
+            "label": "Mono",
+            "value": "mono"
+          },
+          {
+            "label": "Condensed",
+            "value": "condensed"
+          }
+        ]
+      },
+      "clockseconds": {
+        "text": "Desktop clock seconds",
+        "type": "bool",
+        "value": false,
+        "order": 20,
+        "condition": "desktopclock.value"
+      },
+      "clockplate": {
+        "text": "Glass plate behind clock",
+        "type": "bool",
+        "value": false,
+        "order": 21,
+        "condition": "desktopclock.value"
+      },
       "clock24": {
         "text": "24-hour time",
         "type": "bool",
         "value": true,
-        "order": 18
+        "order": 22
       },
       "city": {
         "text": "Weather city",
         "type": "textinput",
         "value": "London",
-        "order": 19
+        "order": 23
       },
       "units": {
         "text": "Temperature",
@@ -258,7 +311,7 @@
             "value": "f"
           }
         ],
-        "order": 20
+        "order": 24
       },
       "musicsource": {
         "text": "Music source",
@@ -278,86 +331,86 @@
             "value": "player"
           }
         ],
-        "order": 21
+        "order": 25
       },
       "musicfolder": {
         "text": "Music folder",
         "type": "directory",
         "mode": "fetchall",
         "value": "",
-        "order": 22
+        "order": 26
       },
       "reminders": {
         "text": "Add reminders (separate with ;)",
         "type": "textinput",
         "value": "",
-        "order": 23
+        "order": 27
       },
       "notes": {
         "text": "Notes text",
         "type": "textinput",
         "value": "",
-        "order": 24
+        "order": 28
       },
       "showclock": {
         "text": "Card: Clock",
         "type": "bool",
         "value": false,
-        "order": 25
+        "order": 29
       },
       "showweather": {
         "text": "Card: Weather",
         "type": "bool",
         "value": true,
-        "order": 26
+        "order": 30
       },
       "showmusic": {
         "text": "Card: Music",
         "type": "bool",
         "value": true,
-        "order": 27
+        "order": 31
       },
       "showcalendar": {
         "text": "Card: Calendar",
         "type": "bool",
         "value": true,
-        "order": 28
+        "order": 32
       },
       "showworld": {
         "text": "Card: World Clock",
         "type": "bool",
         "value": false,
-        "order": 29
+        "order": 33
       },
       "showreminders": {
         "text": "Card: Reminders",
         "type": "bool",
         "value": true,
-        "order": 30
+        "order": 34
       },
       "shownotes": {
         "text": "Card: Notes",
         "type": "bool",
         "value": false,
-        "order": 31
+        "order": 35
       },
       "showfocus": {
         "text": "Card: Focus Timer",
         "type": "bool",
         "value": false,
-        "order": 32
+        "order": 36
       },
       "showsystem": {
         "text": "Card: System",
         "type": "bool",
         "value": false,
-        "order": 33
+        "order": 37
       },
       "showvisualizer": {
         "text": "Card: Visualizer",
         "type": "bool",
         "value": false,
-        "order": 34
+        "order": 38
       }
     }
   },

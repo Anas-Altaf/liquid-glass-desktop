@@ -5,7 +5,7 @@
 import { $, el } from "../core/util.js";
 import { cfg, set } from "../core/settings.js";
 import { bus } from "../core/bus.js";
-import { fmtTime } from "../core/time.js";
+import { timeParts, longDate } from "../core/time.js";
 import { player } from "../audio/player.js";
 import { attach } from "../audio/visualizer.js";
 import { paintCover } from "../widgets/music.js";
@@ -73,8 +73,9 @@ export function initIsland({ openMenu, openSettings, toggleCC }) {
   mode();
   return {
     tick(now) {
-      q(".isl-time").textContent = fmtTime(now, cfg.clock.seconds ? { second: "2-digit" } : {});
-      q(".isl-date").textContent = new Intl.DateTimeFormat(undefined, { weekday: "long", day: "numeric", month: "long" }).format(now);
+      const t = timeParts(now);
+      q(".isl-time").textContent = `${t.h}${t.sep}${t.m}${cfg.island.seconds ? t.sep + t.s : ""}${t.ap ? " " + t.ap : ""}`;
+      q(".isl-date").textContent = longDate(now);
     },
   };
 }

@@ -8,7 +8,7 @@ export function mountNotes(pane) {
   const ta = el("textarea", "notes"); ta.placeholder = "Jot something down. It stays on this device."; ta.setAttribute("aria-label", "Note");
   ta.value = store.get("notes", "");
   let t; ta.addEventListener("input", () => { status.textContent = "Saving"; clearTimeout(t); t = setTimeout(() => { store.set("notes", ta.value); status.textContent = "Saved"; }, 500); });
-  bus.on("notes:set", v => { if (v && v !== ta.value) { ta.value = v; store.set("notes", v); } });
+  bus.on("notes:set", v => { if (typeof v === "string" && v !== ta.value) { ta.value = v; store.set("notes", v); } });
   pane.append(title, ta);
   return {};
 }

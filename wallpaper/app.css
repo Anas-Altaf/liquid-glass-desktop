@@ -58,29 +58,47 @@ button { cursor: pointer; }
 #wallpaper, #wpImage, #wpImage2, #wpVideo { position: absolute; inset: 0; width: 100%; height: 100%; display: block; object-fit: cover; }
 #wpImage2 { opacity: 0; }
 #edgeViz { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: 90px; }
-#dim { transition: opacity .25s ease; }
 #dim { position: absolute; inset: 0; background: #000; opacity: 0; pointer-events: none; transition: opacity .3s ease; }
 
-/* desktop clock (draggable) */
-#hero { position: fixed; z-index: 1; color: var(--hero-ink, #fff); cursor: grab; text-shadow: 0 2px 30px rgba(0, 0, 0, 0.12); --hero-size: 1; --hero-weight: 700; }
+/* desktop clock (draggable); a glass plate behind it is optional */
+#hero { position: fixed; z-index: 1; width: max-content; color: var(--hero-color, var(--hero-ink, #fff)); cursor: grab; --hero-size: 1; --hero-fit: 1; --hero-shadow: .25; border-radius: calc(var(--lg-radius) + 8px); }
 #hero.dragging { cursor: grabbing; }
-#hero .cf-time, #hero .cf-h, #hero .cf-m { font-size: calc(clamp(64px, 10vw, 168px) * var(--hero-size)); font-weight: var(--hero-weight); }
-#hero .cf-date { font-size: calc(clamp(15px, 1.5vw, 21px) * max(0.7, var(--hero-size))); }
-#hero .analog { width: calc(240px * var(--hero-size)); height: calc(240px * var(--hero-size)); filter: drop-shadow(0 6px 24px rgba(0, 0, 0, .15)); }
+#hero > .pane { padding: 0; }
+#hero:not(.plate) > .lg-warp, #hero:not(.plate) > .lg-sheen, #hero:not(.plate) > .lg-rim { display: none; }
+#hero.plate { box-shadow: 0 12px 40px rgba(0, 0, 0, var(--lg-shadow)); }
+#hero.plate > .pane { padding: calc(16px * var(--hero-size) * var(--hero-fit)) calc(30px * var(--hero-size) * var(--hero-fit)); }
+#heroFace { opacity: var(--hero-opacity, 1); text-shadow: 0 2px 30px rgba(0, 0, 0, calc(var(--hero-shadow) * .6)), 0 1px 3px rgba(0, 0, 0, calc(var(--hero-shadow) * .4)); }
+#hero .clockface { text-align: var(--hero-align, center); justify-items: var(--hero-justify, center); }
+#hero .cf-time, #hero .cf-h, #hero .cf-m { font-size: calc(clamp(64px, 10vw, 168px) * var(--hero-size) * var(--hero-fit)); }
+#hero .cf-s { font-size: calc(clamp(26px, 3.6vw, 60px) * var(--hero-size) * var(--hero-fit)); }
+#hero .cf-date { font-size: calc(clamp(15px, 1.5vw, 21px) * max(0.7, var(--hero-size)) * var(--hero-fit)); }
+#hero .analog { width: calc(240px * var(--hero-size) * var(--hero-fit)); height: calc(240px * var(--hero-size) * var(--hero-fit)); filter: drop-shadow(0 6px 24px rgba(0, 0, 0, calc(var(--hero-shadow) * .6))); }
 
-/* clock faces */
-.clockface { text-align: center; }
+/* clock faces: --cf-weight / --cf-font override each style's defaults */
+.clockface { text-align: center; --cf-font: var(--font-display); }
+.clockface[data-font="rounded"] { --cf-font: ui-rounded, "SF Pro Rounded", "Nunito", "Arial Rounded MT Bold", var(--font-display); }
+.clockface[data-font="serif"] { --cf-font: "New York", "Playfair Display", Georgia, "Times New Roman", serif; }
+.clockface[data-font="mono"] { --cf-font: ui-monospace, "SF Mono", "JetBrains Mono", Consolas, monospace; }
+.clockface[data-font="condensed"] { --cf-font: "Oswald", "Bahnschrift Condensed", "Arial Narrow", var(--font-display); }
 .widget .clockface { text-align: left; }
-.cf-time { font-family: var(--font-display); font-size: 58px; font-weight: 700; letter-spacing: -0.045em; line-height: 1; }
-.cf-minimal .cf-time { font-weight: 200 !important; letter-spacing: -0.03em; }
+.cf-time { font-family: var(--cf-font); font-size: calc(58px * var(--cf-scale, 1)); font-weight: var(--cf-weight, 700); letter-spacing: -0.045em; line-height: 1; white-space: nowrap; }
+.cf-minimal .cf-time { font-weight: var(--cf-weight, 200); letter-spacing: -0.03em; }
 .cf-sec { font-size: .42em; font-weight: 600; opacity: .55; margin-left: .08em; letter-spacing: -0.02em; }
 .cf-ap { font-size: .3em; font-weight: 700; opacity: .7; margin-left: .2em; letter-spacing: 0; }
-.cf-h, .cf-m { font-family: var(--font-display); font-size: 64px; font-weight: 800; line-height: .86; letter-spacing: -0.04em; }
+.cf-h, .cf-m { font-family: var(--cf-font); font-size: calc(64px * var(--cf-scale, 1)); font-weight: var(--cf-weight, 800); line-height: .86; letter-spacing: -0.04em; white-space: nowrap; }
 .cf-m { opacity: .6; }
-.cf-date { margin-top: 8px; font-size: 15px; font-weight: 600; opacity: .8; }
+.cf-s { font-family: var(--cf-font); font-size: calc(26px * var(--cf-scale, 1)); font-weight: var(--cf-weight, 700); opacity: .4; margin-top: .25em; letter-spacing: -0.02em; }
+.cf-date { margin-top: 8px; font-size: calc(15px * max(0.8, var(--cf-scale, 1))); font-weight: 600; opacity: .8; }
+.clockface.blink .cf-colon { animation: cf-blink 1s steps(1, end) infinite; }
+@keyframes cf-blink { 50% { opacity: .15; } }
+@media (prefers-reduced-motion: reduce) { .clockface.blink .cf-colon { animation: none; } }
 .cf-analog { display: grid; justify-items: center; gap: 6px; }
 .widget .cf-analog { grid-template-columns: auto 1fr; align-items: center; justify-items: start; gap: 16px; }
-.analog text { font-family: var(--font-display); }
+.analog text { font-family: var(--cf-font); font-weight: var(--cf-weight, 600); }
+.analog .h-h { stroke-width: calc(4.2px * var(--cf-wf, 1)); }
+.analog .h-m { stroke-width: calc(3px * var(--cf-wf, 1)); }
+.analog .tk-major { stroke-width: calc(2.2px * var(--cf-wf, 1)); }
+.analog .tk-minor { stroke-width: calc(.9px * var(--cf-wf, 1)); }
 .snap-guide { position: fixed; z-index: 70; display: none; pointer-events: none; background: rgba(10, 132, 255, .8); box-shadow: 0 0 6px rgba(10, 132, 255, .6); }
 .snap-guide.gx { top: 0; bottom: 0; width: 1px; }
 .snap-guide.gy { left: 0; right: 0; height: 1px; }
@@ -273,7 +291,41 @@ select.field { appearance: auto; padding: 0 10px; }
 .wall-opt[aria-pressed="true"] canvas { box-shadow: 0 0 0 2.5px var(--blue); }
 .close-x { position: absolute; top: 16px; right: 16px; z-index: 4; background: var(--wash); }
 .backup { height: 110px; font-family: ui-monospace, Consolas, monospace; font-size: 11.5px; margin-bottom: 12px; }
-.add-sc .row .field { flex: 1; }
+.row.stack { flex-wrap: wrap; }
+.row.stack > .label { flex: 1 1 100%; }
+.row.stack > .chips, .row.stack > .swatches { flex: 1 1 100%; margin: 2px 0 4px; }
+.row .label:empty { flex: 1; }
+.pill.danger { background: var(--red); color: #fff; }
+
+/* chips: wrapping single-select (or toggle) pills used instead of native dropdowns */
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { height: 30px; padding: 0 12px; border: 0; border-radius: 15px; background: var(--wash); font-weight: 600; font-size: 12.5px; color: var(--ink-soft); transition: background-color .18s ease, color .18s ease, transform .18s var(--ease); }
+.chip:hover { background: var(--wash-strong); color: var(--ink); }
+.chip:active { transform: scale(.95); }
+.chip[aria-checked="true"], .chip[aria-pressed="true"] { background: var(--blue); color: #fff; }
+.chip.off:not([aria-checked="true"]) { opacity: .6; }
+.chip.icon { width: 36px; padding: 0; display: grid; place-items: center; }
+.chip.font-rounded { font-family: ui-rounded, "SF Pro Rounded", "Nunito", "Arial Rounded MT Bold", var(--font); }
+.chip.font-serif { font-family: "New York", "Playfair Display", Georgia, serif; }
+.chip.font-mono { font-family: ui-monospace, "SF Mono", "JetBrains Mono", Consolas, monospace; }
+.chip.font-condensed { font-family: "Oswald", "Bahnschrift Condensed", "Arial Narrow", var(--font); }
+.chips .grad { width: 54px; height: 32px; border: 0; border-radius: 10px; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .25); }
+.chips .grad:hover { transform: scale(1.06); }
+
+/* colour swatches */
+.swatches { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.swatch { width: 28px; height: 28px; padding: 0; border: 0; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(127, 127, 127, .45); display: grid; place-items: center; font-size: 11px; font-weight: 800; transition: transform .18s var(--ease), box-shadow .18s ease; }
+.swatch:hover { transform: scale(1.1); }
+.swatch[aria-checked="true"] { box-shadow: 0 0 0 2px var(--page), 0 0 0 4px var(--blue); }
+.swatch.auto { background: conic-gradient(#ff375f, #ffd60a, #30d158, #64d2ff, #bf5af2, #ff375f); color: #fff; text-shadow: 0 1px 2px rgba(0, 0, 0, .5); }
+.swatch.custom { appearance: none; -webkit-appearance: none; cursor: pointer; background: none; }
+.swatch.custom::-webkit-color-swatch-wrapper { padding: 0; }
+.swatch.custom::-webkit-color-swatch { border: 0; border-radius: 50%; }
+
+/* live clock preview in Settings › Clock */
+.clock-preview { display: grid; place-items: center; min-height: 150px; padding: 18px; margin-bottom: 8px; border-radius: 16px; background: var(--wash); overflow: hidden; }
+.clock-preview .clockface { text-align: inherit; }
+.clock-preview.hero-prev { background: linear-gradient(160deg, rgba(0, 0, 0, .18), rgba(0, 0, 0, .05)), var(--wash); }
 
 @media (max-width: 760px) {
   .settings > .pane { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
@@ -287,7 +339,21 @@ select.field { appearance: auto; padding: 0 10px; }
 }
 
 .widget { width: 300px; cursor: default; }
-.widget > .pane { padding: 16px 18px; text-shadow: var(--lift); }
+.widget > .pane { padding: var(--card-pad, 16px) calc(var(--card-pad, 16px) + 2px); text-shadow: var(--lift); zoom: var(--card-zoom, 1); }
+
+/* per-card overrides from Settings › Cards */
+.widget[data-title="hide"] .w-title { display: none; }
+.widget[data-style="clear"] { --sheen-rgb: 255, 255, 255; --lg-tint-add: 0; }
+.widget[data-style="tinted"] { --sheen-rgb: 18, 18, 30; --lg-tint-add: 0.3; }
+:root[data-glass="light"] .widget[data-style="tinted"] { --sheen-rgb: 255, 255, 255; }
+.widget[data-ink="light"] {
+  --ink: #ffffff; --ink-soft: rgba(255, 255, 255, 0.74); --ink-faint: rgba(255, 255, 255, 0.52);
+  --wash: rgba(255, 255, 255, 0.12); --wash-strong: rgba(255, 255, 255, 0.24); --track-bg: rgba(255, 255, 255, 0.24); --lift: 0 1px 1px rgba(0, 0, 0, 0.2);
+}
+.widget[data-ink="dark"] {
+  --ink: #1d1d1f; --ink-soft: rgba(29, 29, 31, 0.72); --ink-faint: rgba(29, 29, 31, 0.5);
+  --wash: rgba(29, 29, 31, 0.07); --wash-strong: rgba(29, 29, 31, 0.14); --track-bg: rgba(29, 29, 31, 0.14); --lift: none;
+}
 .w-title { margin: 0 0 10px; font-size: 13px; font-weight: 700; color: var(--ink-soft); display: flex; align-items: center; gap: 6px; }
 .w-title .grow { flex: 1; }
 

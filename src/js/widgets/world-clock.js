@@ -2,7 +2,14 @@ import { el } from "../core/util.js";
 import { cfg } from "../core/settings.js";
 import { fmtTime } from "../core/time.js";
 
-export const ZONES = [["Europe/London", "London"], ["America/New_York", "New York"], ["America/Los_Angeles", "Los Angeles"], ["Asia/Tokyo", "Tokyo"], ["Asia/Dubai", "Dubai"], ["Asia/Karachi", "Karachi"], ["Asia/Kolkata", "Kolkata"], ["Asia/Singapore", "Singapore"], ["Australia/Sydney", "Sydney"], ["Europe/Paris", "Paris"]];
+export const ZONES = [
+  ["Pacific/Honolulu", "Honolulu"], ["America/Los_Angeles", "Los Angeles"], ["America/Denver", "Denver"], ["America/Chicago", "Chicago"], ["America/Mexico_City", "Mexico City"],
+  ["America/New_York", "New York"], ["America/Toronto", "Toronto"], ["America/Sao_Paulo", "São Paulo"], ["Europe/London", "London"], ["Europe/Lisbon", "Lisbon"],
+  ["Europe/Paris", "Paris"], ["Europe/Berlin", "Berlin"], ["Europe/Madrid", "Madrid"], ["Europe/Rome", "Rome"], ["Africa/Cairo", "Cairo"], ["Africa/Lagos", "Lagos"],
+  ["Africa/Johannesburg", "Johannesburg"], ["Europe/Istanbul", "Istanbul"], ["Europe/Moscow", "Moscow"], ["Asia/Riyadh", "Riyadh"], ["Asia/Dubai", "Dubai"],
+  ["Asia/Karachi", "Karachi"], ["Asia/Kolkata", "Kolkata"], ["Asia/Dhaka", "Dhaka"], ["Asia/Bangkok", "Bangkok"], ["Asia/Singapore", "Singapore"], ["Asia/Shanghai", "Shanghai"],
+  ["Asia/Hong_Kong", "Hong Kong"], ["Asia/Seoul", "Seoul"], ["Asia/Tokyo", "Tokyo"], ["Australia/Sydney", "Sydney"], ["Pacific/Auckland", "Auckland"],
+];
 const nameOf = tz => (ZONES.find(z => z[0] === tz) || [0, tz.split("/").pop().replace(/_/g, " ")])[1];
 
 function offsetMinutes(tz, now) {
@@ -18,7 +25,7 @@ export function mountWorld(pane) {
   const render = () => {
     const now = new Date(), local = -now.getTimezoneOffset();
     list.textContent = "";
-    if (!cfg.cities.length) { list.append(el("div", "empty", "No cities yet. Pick some in Settings, Date & Time.")); return; }
+    if (!cfg.cities.length) { list.append(el("div", "empty", "No cities yet. Pick some in Settings › Clock.")); return; }
     cfg.cities.forEach(tz => {
       let off; try { off = offsetMinutes(tz, now); } catch { return; }
       const diff = (off - local) / 60;

@@ -31,13 +31,22 @@ export function layout({ animate = false } = {}) {
   if (W >= 1240) cands.push([M, M + cw + gap, W - M - cw, W - M - 2 * cw - gap]);
   if (W >= 700 && W < 1000) cands.push([Math.round(W / 2 - cw - gap / 2), Math.round(W / 2 + gap / 2)]);
   if (!cands.length) cands.push([Math.round((W - cw) / 2)]);
+  /* cards you've moved stay put; the rest flow into columns around them */
+  const box = n => { const l = parseFloat(n.style.left) || 0, t = parseFloat(n.style.top) || 0; return { l, t, r: l + n.offsetWidth, b: t + n.offsetHeight }; };
+  const taken = vis.filter(id => cfg.positions[id]).map(id => { const n = widgetEl(id); placeSaved(n, cfg.positions[id]); return box(n); });
   let place = {};
   for (const xs of cands) {
-    const ys = xs.map(() => top); place = {};
-    free.forEach(id => { const n = widgetEl(id); let c = 0; ys.forEach((y, i) => { if (y < ys[c] - 1) c = i; }); place[id] = [xs[c], ys[c]]; ys[c] += n.offsetHeight + gap; });
+    const ys = xs.map(() => top), occ = [...taken]; place = {};
+    free.forEach(id => {
+      const n = widgetEl(id), w = n.offsetWidth, h = n.offsetHeight;
+      let c = 0; ys.forEach((y, i) => { if (y < ys[c] - 1) c = i; });
+      let y = ys[c], hit;
+      while ((hit = occ.find(o => o.l < xs[c] + w && o.r > xs[c] && o.t < y + h + gap && o.b + gap > y))) y = hit.b + gap;
+      place[id] = [xs[c], y]; occ.push({ l: xs[c], t: y, r: xs[c] + w, b: y + h }); ys[c] = y + h + gap;
+    });
     if (Math.max(...ys) - gap <= bottom) break;
   }
-  vis.forEach(id => { const n = widgetEl(id); if (cfg.positions[id]) placeSaved(n, cfg.positions[id]); else { n.style.left = place[id][0] + "px"; n.style.top = place[id][1] + "px"; } });
+  free.forEach(id => { const n = widgetEl(id); n.style.left = place[id][0] + "px"; n.style.top = place[id][1] + "px"; });
   placeHero();
   if (animate) flip([...before.keys()].filter(n => !n.hidden), before);
 }
@@ -109,4 +118,4 @@ export function enableDragging() {
   };
   addEventListener("pointerup", end); addEventListener("pointercancel", end);
 }
-export function resetLayout() { update({ positions: {} }, { silent: true }); layout({ animate: true }); }
+export function resetLayout() { set("positions", {}, { silent: true }); layout({ animate: true }); }

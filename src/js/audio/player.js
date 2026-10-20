@@ -12,7 +12,8 @@ import { useAnalyser } from "./visualizer.js";
 export const engine = new Engine();
 const audio = new Audio(); audio.preload = "auto";
 let mediaNode = null;
-function wireAudio() { engine.ensure(); if (!mediaNode) { try { mediaNode = engine.ctx.createMediaElementSource(audio); mediaNode.connect(engine.out); } catch {} } useAnalyser(engine.analyser); }
+/* once the element is routed through the engine, its volume is applied there (not twice) */
+function wireAudio() { engine.ensure(); if (!mediaNode) { try { mediaNode = engine.ctx.createMediaElementSource(audio); mediaNode.connect(engine.out); audio.volume = 1; } catch {} } useAnalyser(engine.analyser); }
 
 const builtin = TRACKS.map((t, i) => ({ id: "synth:" + t.id, kind: "synth", title: t.title, artist: t.artist, album: t.album, synth: t }));
 let user = [];           // {id, kind:"file", title, artist, src}
@@ -37,10 +38,10 @@ export const player = {
   },
   async pause() { audio.pause(); if (engine.playing) await engine.pause(); emit(); },
   seek(sec) { if (isFile()) audio.currentTime = sec; else { const t = current(); if (!engine.track) engine.load(t.synth, 0); engine.seek(sec); } emit(); },
-  async go(i, autoplay) {
+  async go(i, autoplay, back) {
     const L = list(); if (!L.length) return;
     const was = autoplay ?? player.playing;
-    history.push(idx); idx = (i + L.length) % L.length; store.set("current", current().id);
+    if (!back) history.push(idx); idx = (i + L.length) % L.length; store.set("current", current().id);
     audio.pause(); audio.removeAttribute("src");
     const t = current();
     if (t.kind === "synth") engine.load(t.synth, 0); else { if (engine.playing) await engine.pause(); audio.src = t.src; }
@@ -53,7 +54,7 @@ export const player = {
     if (auto && idx === L.length - 1 && cfg.music.repeat === "off") { player.pause(); return player.go(0, false); }
     return player.go(idx + 1, auto ? true : undefined);
   },
-  prev() { if (player.position > 3) return player.seek(0); if (cfg.music.shuffle && history.length) { const j = history.pop(); idx = j; return player.go(j); } return player.go(idx - 1); },
+  prev() { if (player.position > 3) return player.seek(0); if (cfg.music.shuffle && history.length) return player.go(history.pop(), undefined, true); return player.go(idx - 1); },
   setVolume(v) { engine.setVolume(v); audio.volume = mediaNode ? 1 : v; },
   index: () => idx,
 };
@@ -87,8 +88,13 @@ export async function addFiles(fileList) {
 }
 export async function removeTrack(id) {
   if (id.startsWith("synth:")) return;
+  const cur = current(), wasCurrent = cur && cur.id === id, i = list().findIndex(t => t.id === id);
   await files.del(id); user = user.filter(t => t.id !== id);
-  if (idx >= list().length) idx = 0; bus.emit("playlist"); emit();
+  history = [];
+  if (i >= 0 && i < idx) idx--;
+  if (idx >= list().length) idx = 0;
+  if (wasCurrent) { audio.pause(); audio.removeAttribute("src"); const t = current(); if (t && t.kind === "file") audio.src = t.src; else if (t) engine.load(t.synth, 0); }
+  bus.emit("playlist"); emit();
 }
 export function setIncludeBuiltin(on) { store.set("includeBuiltin", on); idx = 0; bus.emit("playlist"); emit(); }
 export function setWEFolder(paths) {

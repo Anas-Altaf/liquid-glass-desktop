@@ -1,5 +1,19 @@
 .widget { width: 300px; cursor: default; }
-.widget > .pane { padding: 16px 18px; text-shadow: var(--lift); }
+.widget > .pane { padding: var(--card-pad, 16px) calc(var(--card-pad, 16px) + 2px); text-shadow: var(--lift); zoom: var(--card-zoom, 1); }
+
+/* per-card overrides from Settings › Cards */
+.widget[data-title="hide"] .w-title { display: none; }
+.widget[data-style="clear"] { --sheen-rgb: 255, 255, 255; --lg-tint-add: 0; }
+.widget[data-style="tinted"] { --sheen-rgb: 18, 18, 30; --lg-tint-add: 0.3; }
+:root[data-glass="light"] .widget[data-style="tinted"] { --sheen-rgb: 255, 255, 255; }
+.widget[data-ink="light"] {
+  --ink: #ffffff; --ink-soft: rgba(255, 255, 255, 0.74); --ink-faint: rgba(255, 255, 255, 0.52);
+  --wash: rgba(255, 255, 255, 0.12); --wash-strong: rgba(255, 255, 255, 0.24); --track-bg: rgba(255, 255, 255, 0.24); --lift: 0 1px 1px rgba(0, 0, 0, 0.2);
+}
+.widget[data-ink="dark"] {
+  --ink: #1d1d1f; --ink-soft: rgba(29, 29, 31, 0.72); --ink-faint: rgba(29, 29, 31, 0.5);
+  --wash: rgba(29, 29, 31, 0.07); --wash-strong: rgba(29, 29, 31, 0.14); --track-bg: rgba(29, 29, 31, 0.14); --lift: none;
+}
 .w-title { margin: 0 0 10px; font-size: 13px; font-weight: 700; color: var(--ink-soft); display: flex; align-items: center; gap: 6px; }
 .w-title .grow { flex: 1; }
 

@@ -1,6 +1,5 @@
 import { el } from "../core/util.js";
 import { segmented } from "../components/segmented.js";
-import { engine } from "../audio/player.js";
 
 export function mountFocus(pane) {
   const C = 2 * Math.PI * 48;
@@ -17,7 +16,8 @@ export function mountFocus(pane) {
     q(".fc-start").textContent = s.running ? "Pause" : s.left < s.total ? "Resume" : "Start";
   }
   function chime() {
-    try { engine.ensure(); const c = engine.ctx; c.resume(); [880, 1175, 1568].forEach((f, i) => { const o = c.createOscillator(), g = c.createGain(), t = c.currentTime + i * 0.18; o.frequency.value = f; g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.25, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.6); o.connect(g); g.connect(c.destination); o.start(t); o.stop(t + 0.7); }); } catch {}
+    /* its own short-lived context, so a paused song doesn't resume with the chime */
+    try { const c = new (window.AudioContext || window.webkitAudioContext)(); setTimeout(() => c.close(), 1500); [880, 1175, 1568].forEach((f, i) => { const o = c.createOscillator(), g = c.createGain(), t = c.currentTime + i * 0.18; o.frequency.value = f; g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.25, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.6); o.connect(g); g.connect(c.destination); o.start(t); o.stop(t + 0.7); }); } catch {}
   }
   q(".fc-start").onclick = () => { if (s.running) s.running = false; else { s.running = true; s.endAt = Date.now() + s.left * 1000; } render(); };
   q(".fc-reset").onclick = () => { s.running = false; s.left = s.total; render(); };

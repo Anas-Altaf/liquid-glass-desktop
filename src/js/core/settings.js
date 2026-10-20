@@ -22,14 +22,16 @@ export const DEFAULTS = {
   cards: {},                     // id -> per-card overrides {blur, sat, bright, tint, radius, rim, shine, refraction, width}
   glass: { blur: 14, sat: 180, bright: 1, tint: 0.06, radius: 26, rim: 0.45, shine: 0.5, refraction: 1, quality: "balanced", react: "near", reactRadius: 220, shadow: 0.24 },
   wallpaper: { kind: "theme", theme: "dusk", motion: true, speed: 1, fps: 60, colorA: "#1f2a6b", colorB: "#e0707a", fit: "cover", slideEvery: 60, dim: 0, audioReactive: true },
-  island: { mode: "island", expandOnHover: true, showTime: true, showWeather: true },
+  island: { mode: "island", expandOnHover: true, showTime: true, showWeather: true, seconds: false },
   dock: { mode: "hidden", shortcuts: [
     { id: "s1", name: "Settings", kind: "action", target: "settings", icon: "gear" },
     { id: "s2", name: "Edit layout", kind: "action", target: "edit", icon: "grid" },
     { id: "s3", name: "Display settings", kind: "uri", target: "ms-settings:display", icon: "display" },
   ] },
-  clock: { style: "digital", seconds: false, date: true, h24: !new Intl.DateTimeFormat(undefined, { hour: "numeric" }).resolvedOptions().hour12 },
-  hero: { show: true, style: "digital", size: 1, date: true, weight: 700 },
+  clock: { style: "digital", seconds: false, date: true, h24: !new Intl.DateTimeFormat(undefined, { hour: "numeric" }).resolvedOptions().hour12,
+    size: 1, weight: "auto", font: "system", numerals: "four", leadingZero: false, ampm: true, blink: false, dateFormat: "long" },
+  hero: { show: true, style: "digital", size: 1, date: true, weight: "auto", seconds: false, font: "system", numerals: "four", color: "auto", opacity: 1, shadow: 0.25, plate: false, align: "center" },
+  calendar: { weekStart: 0 },
   music: { source: "auto", repeat: "all", shuffle: false, continuous: true, volume: 0.8, order: [] },
   viz: { card: true, island: true, edge: false, style: "bars", color: "ink", sensitivity: 1, bars: 48, edgeHeight: 90 },
   style: "clear",
@@ -38,6 +40,7 @@ export const DEFAULTS = {
   city: "London", unit: "c",
   cities: ["Europe/London", "America/New_York", "Asia/Tokyo"],
   weLast: {},                    // last values seen from Wallpaper Engine's properties
+  version: 2,
 };
 
 const isObj = v => v && typeof v === "object" && !Array.isArray(v);
@@ -48,7 +51,17 @@ function merge(base, over) {
   return out;
 }
 
-export const cfg = merge(DEFAULTS, store.get("settings", {}));
+const saved = store.get("settings", {});
+export const cfg = merge(DEFAULTS, saved);
+
+/* v1 shared one seconds switch between every clock and saved the desktop
+ * clock's weight as 700 even when it meant "style default" */
+if (!(saved.version >= 2) && Object.keys(saved).length) {
+  const was = saved.clock || {};
+  cfg.hero.seconds = cfg.island.seconds = !!was.seconds;
+  if (cfg.hero.weight === 700) cfg.hero.weight = "auto";
+  cfg.version = 2;
+}
 
 let t;
 const persist = () => { clearTimeout(t); t = setTimeout(() => saving && store.set("settings", cfg), 120); };
@@ -61,15 +74,26 @@ export function update(patch, { silent = false, source = "" } = {}) {
   persist();
   if (!silent) bus.emit("settings", { patch, source });
 }
+/** set("a.b.c", v) replaces the value at that path (objects are not merged). */
 export function set(path, value, opts) {
   const keys = path.split("."), top = keys[0];
-  if (keys.length === 1) return update({ [top]: value }, opts);
+  if (keys.length === 1) { cfg[top] = value; persist(); emit(top, path, opts); return; }
   const obj = structuredClone(cfg[top] ?? {});
   let o = obj; keys.slice(1, -1).forEach(k => { o[k] = isObj(o[k]) ? o[k] : {}; o = o[k]; });
   o[keys[keys.length - 1]] = value;
-  cfg[top] = obj; persist();
-  if (!(opts && opts.silent)) bus.emit("settings", { patch: { [top]: obj }, source: opts && opts.source || "", path });
+  cfg[top] = obj; persist(); emit(top, path, opts);
 }
+/** unset("a.b.c") removes that key, so it falls back to its default again. */
+export function unset(path, opts) {
+  const keys = path.split("."), top = keys[0];
+  if (keys.length === 1) { cfg[top] = structuredClone(DEFAULTS[top]); persist(); emit(top, path, opts); return; }
+  const obj = structuredClone(cfg[top] ?? {});
+  let o = obj; for (const k of keys.slice(1, -1)) { if (!isObj(o[k])) return; o = o[k]; }
+  if (!(keys[keys.length - 1] in o)) return;
+  delete o[keys[keys.length - 1]];
+  cfg[top] = obj; persist(); emit(top, path, opts);
+}
+function emit(top, path, opts) { if (!(opts && opts.silent)) bus.emit("settings", { patch: { [top]: cfg[top] }, source: opts && opts.source || "", path }); }
 export const setWidget = (id, on) => set(`widgets.${id}`, on);
 export function resetAll() { saving = false; clearTimeout(t); store.set("settings", {}); location.reload(); }
 export function exportAll() { return JSON.stringify({ settings: cfg, reminders: store.get("reminders", []), notes: store.get("notes", "") }, null, 2); }
