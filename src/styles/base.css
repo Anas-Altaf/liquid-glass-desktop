@@ -1,0 +1,51 @@
+*, *::before, *::after { box-sizing: border-box; }
+html { height: 100%; background: var(--page); scroll-padding-top: env(safe-area-inset-top, 0px); }
+body {
+  height: 100%; margin: 0; overflow: hidden; background: var(--page); color: var(--ink);
+  font-family: var(--font); font-size: 14px; line-height: 1.35; -webkit-font-smoothing: antialiased;
+  user-select: none; -webkit-user-select: none;
+}
+input, textarea { user-select: text; -webkit-user-select: text; }
+::placeholder { color: var(--ink-faint); opacity: 1; }
+input, textarea, select { color: var(--ink); }
+select option { color: #1d1d1f; }
+button, input, textarea, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+[hidden] { display: none !important; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.num { font-variant-numeric: tabular-nums; }
+.soft { color: var(--ink-soft); } .faint { color: var(--ink-faint); }
+
+#wall { position: relative; width: 100%; height: 100%; overflow: hidden; }
+#wallpaper, #wpImage, #wpImage2, #wpVideo { position: absolute; inset: 0; width: 100%; height: 100%; display: block; object-fit: cover; }
+#wpImage2 { opacity: 0; }
+#edgeViz { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: 90px; }
+#dim { transition: opacity .25s ease; }
+#dim { position: absolute; inset: 0; background: #000; opacity: 0; pointer-events: none; transition: opacity .3s ease; }
+
+/* desktop clock (draggable) */
+#hero { position: fixed; z-index: 1; color: var(--hero-ink, #fff); cursor: grab; text-shadow: 0 2px 30px rgba(0, 0, 0, 0.12); --hero-size: 1; --hero-weight: 700; }
+#hero.dragging { cursor: grabbing; }
+#hero .cf-time, #hero .cf-h, #hero .cf-m { font-size: calc(clamp(64px, 10vw, 168px) * var(--hero-size)); font-weight: var(--hero-weight); }
+#hero .cf-date { font-size: calc(clamp(15px, 1.5vw, 21px) * max(0.7, var(--hero-size))); }
+#hero .analog { width: calc(240px * var(--hero-size)); height: calc(240px * var(--hero-size)); filter: drop-shadow(0 6px 24px rgba(0, 0, 0, .15)); }
+
+/* clock faces */
+.clockface { text-align: center; }
+.widget .clockface { text-align: left; }
+.cf-time { font-family: var(--font-display); font-size: 58px; font-weight: 700; letter-spacing: -0.045em; line-height: 1; }
+.cf-minimal .cf-time { font-weight: 200 !important; letter-spacing: -0.03em; }
+.cf-sec { font-size: .42em; font-weight: 600; opacity: .55; margin-left: .08em; letter-spacing: -0.02em; }
+.cf-ap { font-size: .3em; font-weight: 700; opacity: .7; margin-left: .2em; letter-spacing: 0; }
+.cf-h, .cf-m { font-family: var(--font-display); font-size: 64px; font-weight: 800; line-height: .86; letter-spacing: -0.04em; }
+.cf-m { opacity: .6; }
+.cf-date { margin-top: 8px; font-size: 15px; font-weight: 600; opacity: .8; }
+.cf-analog { display: grid; justify-items: center; gap: 6px; }
+.widget .cf-analog { grid-template-columns: auto 1fr; align-items: center; justify-items: start; gap: 16px; }
+.analog text { font-family: var(--font-display); }
+.snap-guide { position: fixed; z-index: 70; display: none; pointer-events: none; background: rgba(10, 132, 255, .8); box-shadow: 0 0 6px rgba(10, 132, 255, .6); }
+.snap-guide.gx { top: 0; bottom: 0; width: 1px; }
+.snap-guide.gy { left: 0; right: 0; height: 1px; }
+.is-dragging, .is-dragging * { cursor: grabbing !important; }
+.widget.dragging { z-index: 15; box-shadow: 0 24px 60px rgba(0, 0, 0, calc(var(--lg-shadow) + .12)); }

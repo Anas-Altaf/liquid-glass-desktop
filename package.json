@@ -1,0 +1,14 @@
+{
+  "name": "glass-desktop",
+  "version": "1.0.0",
+  "description": "Liquid Glass desktop for Wallpaper Engine and the web (SVG displacement glass).",
+  "scripts": {
+    "build": "node tools/build.mjs"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "esbuild": "^0.25.10"
+  },
+  "private": true,
+  "type": "module"
+}

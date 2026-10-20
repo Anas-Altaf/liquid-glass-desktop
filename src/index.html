@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Glass Desktop</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!--STYLES-->
+</head>
+<body>
+<div id="wall" aria-hidden="true">
+  <canvas id="wallpaper"></canvas>
+  <img id="wpImage" alt="" hidden><img id="wpImage2" alt="" hidden>
+  <video id="wpVideo" muted loop playsinline autoplay hidden></video>
+  <canvas id="edgeViz" hidden></canvas>
+  <div id="dim"></div>
+</div>
+<div id="hero" title="Drag to move"><div id="heroFace"></div></div>
+
+<div id="islandWrap" data-mode="island">
+  <canvas class="iv" id="ivL" aria-hidden="true"></canvas>
+  <header class="glass island" id="island" aria-label="Dynamic Island">
+    <div class="pane">
+      <div class="isl-compact">
+        <span class="isl-time num"></span>
+        <span class="isl-np-wrap"><canvas class="isl-art-s" aria-hidden="true"></canvas><img class="isl-img-s" alt="" hidden><span class="isl-np"></span></span>
+        <span class="isl-wx num" hidden></span>
+        <span class="isl-status"><span class="isl-bat num" hidden></span><svg class="isl-net" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-label="Network"><path d="M2.5 9a14 14 0 0 1 19 0M5.5 12.5a9.5 9.5 0 0 1 13 0M8.6 16a5 5 0 0 1 6.8 0"/><circle cx="12" cy="19.2" r="1.3" fill="currentColor" stroke="none"/></svg></span>
+        <button class="icon-btn isl-cc" aria-label="Control Center"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"><rect x="3" y="5" width="18" height="5.5" rx="2.75"/><circle cx="7.6" cy="7.75" r="1.6" fill="currentColor"/><rect x="3" y="13.5" width="18" height="5.5" rx="2.75"/><circle cx="16.4" cy="16.25" r="1.6" fill="currentColor"/></svg></button>
+        <button class="icon-btn isl-menu" aria-label="Menu" aria-haspopup="menu" aria-expanded="false"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button>
+      </div>
+      <div class="isl-expanded">
+        <div class="isl-date"></div>
+        <div class="isl-now"><span class="isl-art-wrap"><canvas class="isl-art" aria-hidden="true"></canvas><img class="isl-img" alt="" hidden></span>
+          <div class="isl-meta"><div class="isl-title"></div><div class="isl-artist"></div></div>
+          <div class="isl-ctrl">
+            <button class="icon-btn isl-shuffle" aria-label="Shuffle" aria-pressed="false"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h4v4M4 20 20 4M20 16v4h-4M15 15l5 5M4 4l5 5"/></svg></button>
+            <button class="icon-btn isl-prev" aria-label="Previous"><svg width="22" height="22" viewBox="0 0 32 32" fill="currentColor" style="transform:scaleX(-1)"><path d="M4 9.2v13.6a1 1 0 0 0 1.55.83l9.55-6.6a1.2 1.2 0 0 0 0-2.06L5.55 8.37A1 1 0 0 0 4 9.2Z"/><path d="M17 9.2v13.6a1 1 0 0 0 1.55.83l9.55-6.6a1.2 1.2 0 0 0 0-2.06l-9.55-6.6A1 1 0 0 0 17 9.2Z"/></svg></button>
+            <button class="icon-btn isl-play" aria-label="Play"><svg width="28" height="28" viewBox="0 0 24 24"><path fill="currentColor" d=""/></svg></button>
+            <button class="icon-btn isl-next" aria-label="Next"><svg width="22" height="22" viewBox="0 0 32 32" fill="currentColor"><path d="M4 9.2v13.6a1 1 0 0 0 1.55.83l9.55-6.6a1.2 1.2 0 0 0 0-2.06L5.55 8.37A1 1 0 0 0 4 9.2Z"/><path d="M17 9.2v13.6a1 1 0 0 0 1.55.83l9.55-6.6a1.2 1.2 0 0 0 0-2.06l-9.55-6.6A1 1 0 0 0 17 9.2Z"/></svg></button>
+          </div></div>
+        <div class="isl-actions"><button class="pill isl-set">Settings</button></div>
+      </div>
+    </div>
+  </header>
+  <canvas class="iv" id="ivR" aria-hidden="true"></canvas>
+</div>
+
+<section class="glass widget" data-w="clock" aria-label="Clock"><div class="pane"></div></section>
+<section class="glass widget" data-w="weather" aria-label="Weather"><div class="pane"></div></section>
+<section class="glass widget" data-w="music" aria-label="Music"><div class="pane"></div></section>
+<section class="glass widget" data-w="calendar" aria-label="Calendar"><div class="pane"></div></section>
+<section class="glass widget" data-w="world" aria-label="World clock"><div class="pane"></div></section>
+<section class="glass widget" data-w="reminders" aria-label="Reminders"><div class="pane"></div></section>
+<section class="glass widget" data-w="notes" aria-label="Notes"><div class="pane"></div></section>
+<section class="glass widget" data-w="focus" aria-label="Focus timer"><div class="pane"></div></section>
+<section class="glass widget" data-w="system" aria-label="System"><div class="pane"></div></section>
+<section class="glass widget" data-w="visualizer" aria-label="Visualizer"><div class="pane"><canvas id="vizCard" aria-hidden="true"></canvas></div></section>
+
+<nav class="glass dock" id="dock" aria-label="Shortcuts" hidden>
+  <div class="pane dock-row"></div>
+</nav>
+
+
+
+<section class="glass window cc" id="cc" aria-label="Control Center" hidden>
+  <div class="pane">
+    <div class="tile"><div class="pane"><button class="tile-btn" id="ccFocus" aria-pressed="false"><span class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M20 15.3A8.5 8.5 0 0 1 8.7 4a8.5 8.5 0 1 0 11.3 11.3Z"/></svg></span><span><span class="tile-k">Focus</span><span class="tile-v">Off</span></span></button></div></div>
+    <div class="tile"><div class="pane"><button class="tile-btn" id="ccStyle" aria-pressed="false"><span class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/></svg></span><span><span class="tile-k">Glass</span><span class="tile-v">Clear</span></span></button></div></div>
+    <div class="tile wide"><div class="pane"><div class="tile-label"><span>Display</span><span class="num" id="ccBriV"></span></div><div id="ccBri"></div></div></div>
+    <div class="tile wide"><div class="pane"><div class="tile-label"><span>Sound</span><span class="num" id="ccVolV"></span></div><div id="ccVol"></div></div></div>
+    <div class="tile wide cc-now"><div class="pane">
+      <span class="cc-art"><canvas id="ccThumb" aria-hidden="true"></canvas><img id="ccImg" alt="" hidden></span>
+      <div class="cc-meta"><div class="mu-title" id="ccTitle"></div><div class="mu-artist" id="ccArtist"></div></div>
+      <button class="icon-btn" id="ccPlay" aria-label="Play"><svg width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d=""/></svg></button>
+      <button class="icon-btn" id="ccNext" aria-label="Next track"><svg width="24" height="24" viewBox="0 0 32 32" fill="currentColor"><path d="M4 9.2v13.6a1 1 0 0 0 1.55.83l9.55-6.6a1.2 1.2 0 0 0 0-2.06L5.55 8.37A1 1 0 0 0 4 9.2Z"/><path d="M17 9.2v13.6a1 1 0 0 0 1.55.83l9.55-6.6a1.2 1.2 0 0 0 0-2.06l-9.55-6.6A1 1 0 0 0 17 9.2Z"/></svg></button>
+    </div></div>
+    <div class="tile"><div class="pane"><button class="tile-btn" id="ccMotion" aria-pressed="true"><span class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3 9c3-3 6 3 9 0s6 3 9 0M3 15c3-3 6 3 9 0s6 3 9 0"/></svg></span><span><span class="tile-k">Motion</span><span class="tile-v">On</span></span></button></div></div>
+    <div class="tile"><div class="pane"><button class="tile-btn" id="ccIsland" aria-pressed="true"><span class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="9" width="14" height="6" rx="3"/></svg></span><span><span class="tile-k">Top bar</span><span class="tile-v">Island</span></span></button></div></div>
+  </div>
+</section>
+
+<section class="glass window settings" id="settings" role="dialog" aria-label="Settings" hidden>
+  <div class="pane">
+    <nav class="set-side" id="setSide" role="tablist" aria-label="Settings sections"><h2>Settings</h2></nav>
+    <div class="set-main" id="setMain"></div>
+    <button class="icon-btn close-x" id="setClose" aria-label="Close settings"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+  </div>
+</section>
+<!--SCRIPTS-->
+</body>
+</html>

@@ -1,0 +1,30 @@
+/* Approach 3 glass. Every property is a variable: global values live on
+ * :root (Settings → Glass), per-card overrides on the element itself. */
+:root { --lg-blur: 14px; --lg-sat: 180%; --lg-bright: 1; --lg-tint: 0.06; --lg-radius: 26px; --lg-rim: 0.45; --lg-shine: 0.5; --lg-shadow: 0.24; --lg-glow: 0; --sheen-rgb: 255, 255, 255; }
+:root[data-style="tinted"] { --sheen-rgb: 18, 18, 30; --lg-tint-add: 0.3; }
+:root[data-style="tinted"][data-glass="light"] { --sheen-rgb: 255, 255, 255; }
+.glass { position: fixed; z-index: 10; color: var(--ink); border-radius: var(--lg-radius); box-shadow: 0 12px 40px rgba(0, 0, 0, var(--lg-shadow)); }
+.lg > .pane { position: relative; z-index: 3; }
+.lg-warp, .lg-sheen, .lg-rim { position: absolute; inset: 0; border-radius: inherit; pointer-events: none; }
+.lg-warp {
+  z-index: 0; transform: translateZ(0);
+  -webkit-backdrop-filter: blur(var(--lg-blur)) saturate(var(--lg-sat)) brightness(var(--lg-bright));
+  backdrop-filter: blur(var(--lg-blur)) saturate(var(--lg-sat)) brightness(var(--lg-bright));
+}
+.lg-sheen {
+  z-index: 1;
+  background:
+    radial-gradient(130% 100% at var(--lg-mx, 30%) var(--lg-my, -10%), rgba(255, 255, 255, calc(0.16 * var(--lg-shine) * var(--lg-glow))), transparent 62%),
+    linear-gradient(180deg, rgba(255, 255, 255, calc(0.07 * var(--lg-shine))), transparent 45%),
+    rgba(var(--sheen-rgb), calc(var(--lg-tint) + var(--lg-tint-add, 0)));
+}
+/* thin specular edge, brightest on the lit side; it only warms up near the pointer */
+.lg-rim {
+  z-index: 2; padding: 1px;
+  background: linear-gradient(var(--lg-angle, 155deg), rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.1) 30%, rgba(255, 255, 255, 0.04) 60%, rgba(255, 255, 255, 0.45));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  opacity: calc(var(--lg-rim) * (0.55 + 0.45 * var(--lg-glow)));
+}
+:root[data-reduce="true"] .lg-warp { -webkit-backdrop-filter: none; backdrop-filter: none; }
+:root[data-reduce="true"] .lg-sheen { background: var(--solid); }

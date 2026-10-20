@@ -1,0 +1,55 @@
+.icon-btn { width: 36px; height: 36px; flex: none; display: grid; place-items: center; border: 0; border-radius: 50%; background: transparent; transition: background-color .18s ease, transform .18s var(--ease); }
+.icon-btn:hover { background: var(--wash); }
+.icon-btn:active { transform: scale(0.92); }
+.pill { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 34px; padding: 0 14px; border: 0; border-radius: 17px; background: var(--wash); font-weight: 600; font-size: 13px; transition: background-color .18s ease, transform .18s var(--ease); }
+.pill:hover { background: var(--wash-strong); }
+.pill:active { transform: scale(0.95); }
+.field { flex: 1; min-width: 0; height: 34px; padding: 0 12px; border: 0; border-radius: 17px; background: var(--wash); outline: 0; }
+.field::placeholder { color: var(--ink-faint); }
+.field:focus { box-shadow: 0 0 0 2px var(--ink-soft); }
+.empty { font-size: 13px; color: var(--ink-faint); padding: 6px 0; }
+
+/* slider: thin capsule; the thumb is a white knob that turns into a glass droplet while dragged */
+.slider { position: relative; height: 22px; cursor: pointer; touch-action: none; }
+.sl-track { position: absolute; left: 0; right: 0; top: 50%; height: 6px; margin-top: -3px; border-radius: 3px; background: var(--track-bg); overflow: hidden; transition: height .2s var(--ease), margin-top .2s var(--ease); }
+.sl-fill { position: absolute; inset: 0 auto 0 0; width: 0; background: var(--ink-soft); border-radius: inherit; }
+.slider.active .sl-track { height: 10px; margin-top: -5px; }
+.slider.active .sl-fill { background: var(--ink); }
+.sl-thumb { position: absolute; top: 50%; left: 0; width: 26px; height: 18px; margin: -9px 0 0 -13px; border-radius: 9px; transition: width .25s var(--spring), height .25s var(--spring), margin .25s var(--spring); }
+.sl-thumb > .pane { position: absolute; inset: 0; display: grid; place-items: center; border-radius: inherit; }
+.sl-knob { width: 100%; height: 100%; border-radius: inherit; background: #fff; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.28); transition: opacity .18s ease, transform .25s var(--spring); }
+.sl-thumb > .lg-warp, .sl-thumb > .lg-sheen, .sl-thumb > .lg-rim { opacity: 0; transition: opacity .18s ease; }
+.slider.active .sl-thumb { width: 44px; height: 30px; margin: -15px 0 0 -22px; border-radius: 15px; }
+.slider.active .sl-knob { opacity: 0; transform: scale(1.4); }
+.slider.active .sl-thumb > .lg-warp, .slider.active .sl-thumb > .lg-sheen, .slider.active .sl-thumb > .lg-rim { opacity: 1; }
+.sl-thumb .lg-sheen { background: rgba(255, 255, 255, 0.04); }
+.slider.readonly { pointer-events: none; }
+.slider.readonly .sl-thumb { display: none; }
+.slider:not(:hover):not(.active):not(:focus-visible) .sl-thumb.hide-idle { opacity: 0; }
+
+/* switch: knob stretches and turns to glass while pressed */
+.switch { position: relative; width: 52px; height: 32px; flex: none; border: 0; padding: 0; border-radius: 16px; background: var(--track-bg); transition: background-color .25s ease; }
+.switch[aria-checked="true"] { background: var(--green); }
+.sw-knob { position: absolute; top: 3px; left: 3px; width: 26px; height: 26px; border-radius: 13px; background: #fff; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25); transition: transform .32s var(--spring), width .25s var(--spring), left .25s var(--spring), background-color .2s ease; }
+.switch[aria-checked="true"] .sw-knob { transform: translateX(20px); }
+.sw-knob > .lg-warp, .sw-knob > .lg-sheen, .sw-knob > .lg-rim { opacity: 0; transition: opacity .15s ease; }
+.switch.pressing .sw-knob { width: 34px; background: rgba(255, 255, 255, 0.15); }
+.switch.pressing[aria-checked="true"] .sw-knob { transform: translateX(12px); }
+.switch.pressing .sw-knob > .lg-warp, .switch.pressing .sw-knob > .lg-sheen, .switch.pressing .sw-knob > .lg-rim { opacity: 1; }
+
+/* segmented: a glass droplet marks the selection */
+.seg { position: relative; display: inline-flex; padding: 3px; gap: 2px; border-radius: 12px; background: var(--wash); isolation: auto; }
+.seg button { position: relative; z-index: 1; height: 28px; padding: 0 12px; border: 0; border-radius: 9px; background: transparent; font-weight: 600; font-size: 13px; color: var(--ink-soft); transition: color .2s ease; }
+.seg button[aria-checked="true"] { color: var(--ink); }
+.seg-drop { position: absolute; top: 3px; bottom: 3px; left: 3px; width: 40px; border-radius: 9px; z-index: 0; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.14); transition: left .42s var(--spring), width .42s var(--spring); }
+.seg-drop .lg-sheen { background: var(--wash-strong); }
+
+/* menus */
+.menu { z-index: 60; min-width: 220px; border-radius: 18px; padding: 6px; }
+.menu > .pane { display: grid; }
+.menu-item { display: grid; grid-template-columns: 18px 1fr auto; align-items: center; gap: 6px; height: 32px; padding: 0 10px 0 8px; border: 0; border-radius: 10px; background: transparent; text-align: left; font-weight: 500; font-size: 13.5px; }
+.menu-item:hover, .menu-item:focus-visible { background: var(--blue); color: #fff; outline: none; }
+.menu-item:disabled { opacity: .45; }
+.menu-hint { font-size: 12px; color: var(--ink-faint); }
+.menu-item:hover .menu-hint { color: rgba(255, 255, 255, .8); }
+.menu-sep { height: 1px; margin: 5px 10px; background: var(--wash-strong); }

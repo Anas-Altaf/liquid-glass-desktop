@@ -1,0 +1,372 @@
+{
+  "contentrating": "Everyone",
+  "description": "A Liquid Glass desktop with a Dynamic Island: clock, weather, music player with playlist (or follows Spotify), visualizers, calendar, reminders and more on refracting glass over animated, image, GIF, video or slideshow wallpapers. Drag cards anywhere; right-click for options. Everything is saved.",
+  "file": "index.html",
+  "general": {
+    "supportsaudioprocessing": true,
+    "properties": {
+      "theme": {
+        "text": "Animated theme",
+        "type": "combo",
+        "value": "dusk",
+        "options": [
+          {
+            "label": "Dusk",
+            "value": "dusk"
+          },
+          {
+            "label": "Lagoon",
+            "value": "lagoon"
+          },
+          {
+            "label": "Ember",
+            "value": "ember"
+          },
+          {
+            "label": "Mist",
+            "value": "mist"
+          },
+          {
+            "label": "Aurora",
+            "value": "aurora"
+          }
+        ],
+        "order": 0
+      },
+      "customimage": {
+        "text": "Image or GIF wallpaper",
+        "type": "file",
+        "fileType": "image",
+        "value": "",
+        "order": 1
+      },
+      "customvideo": {
+        "text": "Video wallpaper",
+        "type": "file",
+        "fileType": "video",
+        "value": "",
+        "order": 2
+      },
+      "wallpaperfolder": {
+        "text": "Slideshow folder",
+        "type": "directory",
+        "mode": "fetchall",
+        "value": "",
+        "order": 3
+      },
+      "motion": {
+        "text": "Wallpaper motion",
+        "type": "bool",
+        "value": true,
+        "order": 4
+      },
+      "speed": {
+        "text": "Motion speed",
+        "type": "slider",
+        "value": 100,
+        "min": 20,
+        "max": 300,
+        "fraction": false,
+        "editable": true,
+        "order": 5
+      },
+      "audioreactive": {
+        "text": "React to sound",
+        "type": "bool",
+        "value": true,
+        "order": 6
+      },
+      "glassstyle": {
+        "text": "Glass style",
+        "type": "combo",
+        "value": "clear",
+        "options": [
+          {
+            "label": "Clear",
+            "value": "clear"
+          },
+          {
+            "label": "Tinted",
+            "value": "tinted"
+          }
+        ],
+        "order": 7
+      },
+      "quality": {
+        "text": "Glass quality",
+        "type": "combo",
+        "value": "balanced",
+        "options": [
+          {
+            "label": "High (colour-split rim)",
+            "value": "high"
+          },
+          {
+            "label": "Balanced",
+            "value": "balanced"
+          },
+          {
+            "label": "Fast (blur only)",
+            "value": "fast"
+          }
+        ],
+        "order": 8
+      },
+      "blur": {
+        "text": "Glass blur",
+        "type": "slider",
+        "value": 14,
+        "min": 0,
+        "max": 40,
+        "fraction": false,
+        "editable": true,
+        "order": 9
+      },
+      "refraction": {
+        "text": "Edge refraction",
+        "type": "slider",
+        "value": 100,
+        "min": 0,
+        "max": 200,
+        "fraction": false,
+        "editable": true,
+        "order": 10
+      },
+      "roundness": {
+        "text": "Roundness",
+        "type": "slider",
+        "value": 26,
+        "min": 8,
+        "max": 44,
+        "fraction": false,
+        "editable": true,
+        "order": 11
+      },
+      "border": {
+        "text": "Border",
+        "type": "slider",
+        "value": 45,
+        "min": 0,
+        "max": 100,
+        "fraction": false,
+        "editable": true,
+        "order": 12
+      },
+      "reducetransparency": {
+        "text": "Reduce transparency",
+        "type": "bool",
+        "value": false,
+        "order": 13
+      },
+      "topbar": {
+        "text": "Top bar",
+        "type": "combo",
+        "value": "island",
+        "options": [
+          {
+            "label": "Dynamic Island",
+            "value": "island"
+          },
+          {
+            "label": "Full bar",
+            "value": "bar"
+          },
+          {
+            "label": "Auto-hide",
+            "value": "auto"
+          },
+          {
+            "label": "Hidden",
+            "value": "hidden"
+          }
+        ],
+        "order": 14
+      },
+      "shortcutbar": {
+        "text": "Shortcut bar",
+        "type": "combo",
+        "value": "hidden",
+        "options": [
+          {
+            "label": "Hidden",
+            "value": "hidden"
+          },
+          {
+            "label": "Auto-hide",
+            "value": "auto"
+          },
+          {
+            "label": "Always",
+            "value": "always"
+          }
+        ],
+        "order": 15
+      },
+      "desktopclock": {
+        "text": "Desktop clock",
+        "type": "bool",
+        "value": true,
+        "order": 16
+      },
+      "clockstyle": {
+        "text": "Desktop clock style",
+        "type": "combo",
+        "value": "digital",
+        "options": [
+          {
+            "label": "Digital",
+            "value": "digital"
+          },
+          {
+            "label": "Analog",
+            "value": "analog"
+          },
+          {
+            "label": "Minimal",
+            "value": "minimal"
+          },
+          {
+            "label": "Stacked",
+            "value": "stacked"
+          }
+        ],
+        "order": 17
+      },
+      "clock24": {
+        "text": "24-hour time",
+        "type": "bool",
+        "value": true,
+        "order": 18
+      },
+      "city": {
+        "text": "Weather city",
+        "type": "textinput",
+        "value": "London",
+        "order": 19
+      },
+      "units": {
+        "text": "Temperature",
+        "type": "combo",
+        "value": "c",
+        "options": [
+          {
+            "label": "Celsius",
+            "value": "c"
+          },
+          {
+            "label": "Fahrenheit",
+            "value": "f"
+          }
+        ],
+        "order": 20
+      },
+      "musicsource": {
+        "text": "Music source",
+        "type": "combo",
+        "value": "auto",
+        "options": [
+          {
+            "label": "Auto",
+            "value": "auto"
+          },
+          {
+            "label": "System (Spotify etc.)",
+            "value": "system"
+          },
+          {
+            "label": "Player",
+            "value": "player"
+          }
+        ],
+        "order": 21
+      },
+      "musicfolder": {
+        "text": "Music folder",
+        "type": "directory",
+        "mode": "fetchall",
+        "value": "",
+        "order": 22
+      },
+      "reminders": {
+        "text": "Add reminders (separate with ;)",
+        "type": "textinput",
+        "value": "",
+        "order": 23
+      },
+      "notes": {
+        "text": "Notes text",
+        "type": "textinput",
+        "value": "",
+        "order": 24
+      },
+      "showclock": {
+        "text": "Card: Clock",
+        "type": "bool",
+        "value": false,
+        "order": 25
+      },
+      "showweather": {
+        "text": "Card: Weather",
+        "type": "bool",
+        "value": true,
+        "order": 26
+      },
+      "showmusic": {
+        "text": "Card: Music",
+        "type": "bool",
+        "value": true,
+        "order": 27
+      },
+      "showcalendar": {
+        "text": "Card: Calendar",
+        "type": "bool",
+        "value": true,
+        "order": 28
+      },
+      "showworld": {
+        "text": "Card: World Clock",
+        "type": "bool",
+        "value": false,
+        "order": 29
+      },
+      "showreminders": {
+        "text": "Card: Reminders",
+        "type": "bool",
+        "value": true,
+        "order": 30
+      },
+      "shownotes": {
+        "text": "Card: Notes",
+        "type": "bool",
+        "value": false,
+        "order": 31
+      },
+      "showfocus": {
+        "text": "Card: Focus Timer",
+        "type": "bool",
+        "value": false,
+        "order": 32
+      },
+      "showsystem": {
+        "text": "Card: System",
+        "type": "bool",
+        "value": false,
+        "order": 33
+      },
+      "showvisualizer": {
+        "text": "Card: Visualizer",
+        "type": "bool",
+        "value": false,
+        "order": 34
+      }
+    }
+  },
+  "preview": "preview.jpg",
+  "tags": [
+    "Abstract",
+    "Technology"
+  ],
+  "title": "Glass Desktop",
+  "type": "web",
+  "visibility": "private"
+}
